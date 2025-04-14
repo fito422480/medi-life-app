@@ -7,15 +7,15 @@ import { auth } from "@/lib/firebase/config";
 import { onAuthStateChanged } from "firebase/auth";
 import { getUserProfile } from "@/lib/firebase/db";
 import { User as UserType } from "@/lib/types";
-import { 
-  LayoutDashboard, 
-  CalendarDays, 
-  Users, 
-  UserRound, 
-  Settings, 
-  LogOut, 
-  Menu, 
-  X 
+import {
+  LayoutDashboard,
+  CalendarDays,
+  Users,
+  UserRound,
+  Settings,
+  LogOut,
+  Menu,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -35,7 +35,7 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  
+
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<UserType | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
