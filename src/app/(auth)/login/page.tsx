@@ -1,4 +1,3 @@
-// src/app/(auth)/login/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -18,7 +17,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -62,9 +60,8 @@ export default function LoginPage() {
     try {
       await signInWithEmailAndPassword(auth, data.email, data.password);
       router.push("/dashboard");
-    } catch (error: any) {
-      console.error("Login error:", error);
-
+    } catch (err: unknown) {
+      console.error("Login error:", err);
       const errorMap: Record<string, string> = {
         "auth/user-not-found":
           "No existe una cuenta con este correo electrónico",
@@ -74,9 +71,14 @@ export default function LoginPage() {
           "Demasiados intentos fallidos. Intente más tarde",
       };
 
-      setError(
-        errorMap[error.code] || "Ha ocurrido un error al iniciar sesión"
-      );
+      if (err instanceof Error && "code" in err) {
+        setError(
+          errorMap[err.code as string] ||
+            "Ha ocurrido un error al iniciar sesión"
+        );
+      } else {
+        setError("Ha ocurrido un error al iniciar sesión");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -90,9 +92,8 @@ export default function LoginPage() {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
       router.push("/dashboard");
-    } catch (error: any) {
-      console.error("Google Sign-In error:", error);
-
+    } catch (err: unknown) {
+      console.error("Google Sign-In error:", err);
       const errorMap: Record<string, string> = {
         "auth/popup-closed-by-user": "Inicio de sesión cancelado",
         "auth/cancelled-popup-request":
@@ -100,7 +101,13 @@ export default function LoginPage() {
         "auth/popup-blocked": "El popup de inicio de sesión fue bloqueado",
       };
 
-      setError(errorMap[error.code] || "Error al iniciar sesión con Google");
+      if (err instanceof Error && "code" in err) {
+        setError(
+          errorMap[err.code as string] || "Error al iniciar sesión con Google"
+        );
+      } else {
+        setError("Error al iniciar sesión con Google");
+      }
     } finally {
       setGoogleLoading(false);
     }
@@ -194,7 +201,7 @@ export default function LoginPage() {
             </Form>
           </CardContent>
 
-          <CardFooter className="flex flex-col space-y-4">
+          <div className="p-6 pt-0 flex flex-col space-y-4">
             <div className="relative w-full">
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t" />
@@ -260,7 +267,7 @@ export default function LoginPage() {
                 Crear cuenta
               </Link>
             </div>
-          </CardFooter>
+          </div>
         </Card>
       </div>
     </div>

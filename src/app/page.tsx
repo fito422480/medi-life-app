@@ -1,10 +1,10 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import {
   CalendarDays,
   Clock,
   UserRound,
-  ShieldCheck,
   CheckCircle,
   ArrowRight,
 } from "lucide-react";
@@ -12,7 +12,6 @@ import {
 export default function LandingPage() {
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Header */}
       <header className="border-b bg-white py-4">
         <div className="container mx-auto flex justify-between items-center">
           <div className="text-2xl font-bold text-primary">MediAgenda</div>
@@ -38,7 +37,6 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-blue-50 to-indigo-100 py-20">
         <div className="container mx-auto grid md:grid-cols-2 gap-12 items-center">
           <div className="space-y-6">
@@ -63,16 +61,17 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="rounded-xl bg-white p-6 shadow-xl border md:ml-auto md:w-5/6">
-            <img
+            <Image
               src="https://images.unsplash.com/photo-1505751172876-fa1923c5c528?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8NXx8ZG9jdG9yfGVufDB8fDB8fA%3D%3D&auto=format&fit=crop&w=500&q=60"
               alt="Doctor con paciente"
+              width={500}
+              height={300}
               className="rounded-lg"
             />
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
       <section id="features" className="py-20 bg-white">
         <div className="container mx-auto">
           <div className="text-center mb-16">
@@ -125,7 +124,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Benefits Section */}
       <section id="benefits" className="py-20 bg-gray-50">
         <div className="container mx-auto">
           <div className="text-center mb-16">
@@ -206,7 +204,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* FAQ Section */}
       <section id="faq" className="py-20 bg-white">
         <div className="container mx-auto">
           <div className="text-center mb-16">
@@ -265,7 +262,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* CTA Section */}
       <section className="py-16 bg-primary text-white">
         <div className="container mx-auto text-center">
           <h2 className="text-3xl font-bold mb-6">
@@ -296,7 +292,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Footer */}
       <footer className="bg-gray-900 text-white py-12">
         <div className="container mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">

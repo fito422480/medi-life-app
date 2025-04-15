@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs } from "@/components/ui/tabs";
 import {
   Search,
   CalendarPlus,
@@ -85,11 +85,15 @@ export default function DoctorsPage() {
       setFilteredDoctors(doctors);
     } else {
       const query = searchQuery.toLowerCase();
-      const filtered = doctors.filter(
-        (doctor) =>
-          doctor.displayName.toLowerCase().includes(query) ||
-          doctor.specialty.toLowerCase().includes(query)
-      );
+      const filtered = doctors.filter((doctor) => {
+        const displayName = doctor.displayName || "";
+        const specialty = doctor.specialty || "";
+
+        return (
+          displayName.toLowerCase().includes(query) ||
+          specialty.toLowerCase().includes(query)
+        );
+      });
       setFilteredDoctors(filtered);
     }
   }, [searchQuery, doctors]);
@@ -182,12 +186,14 @@ export default function DoctorsPage() {
                     <div className="flex justify-between items-start">
                       <div>
                         <CardTitle className="text-lg">
-                          {doctor.displayName}
+                          {doctor.displayName || "Doctor"}
                         </CardTitle>
-                        <CardDescription>{doctor.specialty}</CardDescription>
+                        <CardDescription>
+                          {doctor.specialty || "Especialidad no especificada"}
+                        </CardDescription>
                       </div>
                       <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200">
-                        {doctor.specialty}
+                        {doctor.specialty || "General"}
                       </Badge>
                     </div>
                   </CardHeader>

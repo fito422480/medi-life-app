@@ -1,81 +1,78 @@
 // src/lib/types/index.ts
-export type UserRole = "ADMIN" | "DOCTOR" | "PATIENT";
+export type EmergencyContact = {
+  name?: string;
+  phone?: string;
+  relation?: string;
+};
 
-export interface User {
+export type User = {
   uid: string;
-  email: string;
-  displayName: string;
+  email?: string;
+  displayName?: string;
   photoURL?: string;
-  role: UserRole;
-  createdAt: Date;
-  updatedAt: Date;
-}
+  role?: "PATIENT" | "DOCTOR" | "ADMIN";
 
-export interface Doctor extends User {
-  specialty: string;
-  licenseNumber: string;
-  bio?: string;
-  workingHours?: WorkingHours[];
+  // Common fields
   phone?: string;
   address?: string;
-}
 
-export interface Patient extends User {
-  dateOfBirth: Date;
-  gender: string;
+  // Doctor-specific fields
+  specialty?: string;
+  licenseNumber?: string;
+  bio?: string;
+
+  // Patient-specific fields
   bloodType?: string;
   allergies?: string[];
   medicalHistory?: string;
-  emergencyContact?: {
-    name: string;
-    phone: string;
-    relation: string;
-  };
-  phone?: string;
-  address?: string;
-}
+  emergencyContact?: EmergencyContact;
+  gender?: "MALE" | "FEMALE" | "OTHER";
+  birthDate?: string;
 
-export interface WorkingHours {
-  dayOfWeek: number; // 0 = Sunday, 1 = Monday, etc.
-  startTime: string; // Format: HH:MM
-  endTime: string; // Format: HH:MM
-}
+  // Optional metadata
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
+};
 
-export type AppointmentStatus = 
-  | "PENDING" 
-  | "CONFIRMED" 
-  | "COMPLETED" 
-  | "CANCELLED" 
-  | "NO_SHOW";
+export type Doctor = User & {
+  role: "DOCTOR";
+  specialty: string;
+  licenseNumber: string;
+};
 
-export interface Appointment {
-  id: string;
+export type Patient = User & {
+  role: "PATIENT";
+  bloodType?: string;
+  allergies?: string[];
+  medicalHistory?: string;
+  emergencyContact?: EmergencyContact;
+};
+
+export type Appointment = {
+  id?: string;
   patientId: string;
   doctorId: string;
-  patientName: string;
-  doctorName: string;
-  doctorSpecialty: string;
   date: Date;
-  startTime: string; // Format: HH:MM
-  endTime: string; // Format: HH:MM
   status: AppointmentStatus;
-  reason: string;
+  reason?: string;
   notes?: string;
-  diagnosis?: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
+};
 
-export interface Medication {
-  id: string;
-  appointmentId: string;
+export type AppointmentStatus =
+  | "SCHEDULED"
+  | "CONFIRMED"
+  | "COMPLETED"
+  | "CANCELLED"
+  | "RESCHEDULED";
+
+export type Medication = {
+  id?: string;
   patientId: string;
+  appointmentId?: string;
   name: string;
   dosage: string;
   frequency: string;
   startDate: Date;
   endDate?: Date;
   instructions?: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
+};

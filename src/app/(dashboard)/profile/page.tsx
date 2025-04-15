@@ -14,14 +14,12 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -32,6 +30,25 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+
+// Ampliamos la interfaz User para incluir las propiedades necesarias
+declare module "@/lib/hooks/use-auth" {
+  interface User {
+    phone?: string;
+    address?: string;
+    bio?: string;
+    specialty?: string;
+    licenseNumber?: string;
+    bloodType?: string;
+    allergies?: string[];
+    medicalHistory?: string;
+    emergencyContact?: {
+      name?: string;
+      phone?: string;
+      relation?: string;
+    };
+  }
+}
 
 // Definición de esquemas de validación
 const commonFormSchema = z.object({
@@ -156,9 +173,9 @@ export default function ProfilePage() {
         const patientData = data as PatientFormData;
         await updatePatientProfile(user.uid, {
           ...patientData,
-          allergies:
-            patientData.allergies?.split(",").map((a: string) => a.trim()) ||
-            [],
+          allergies: patientData.allergies
+            ? patientData.allergies.split(",").map((a: string) => a.trim())
+            : [],
           emergencyContact: {
             name: patientData.emergencyContactName,
             phone: patientData.emergencyContactPhone,

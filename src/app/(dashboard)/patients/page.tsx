@@ -81,7 +81,8 @@ export default function PatientsPage() {
       const query = searchQuery.toLowerCase();
       const filtered = patients.filter(
         (patient) =>
-          patient.displayName.toLowerCase().includes(query) ||
+          patient.displayName?.toLowerCase().includes(query) ||
+          false ||
           (patient.email && patient.email.toLowerCase().includes(query))
       );
       setFilteredPatients(filtered);
@@ -98,7 +99,9 @@ export default function PatientsPage() {
     router.push(`/dashboard/calendar?patientId=${patientId}`);
   };
 
-  const calculateAge = (dateOfBirth: Date | string) => {
+  const calculateAge = (dateOfBirth?: Date | string) => {
+    if (!dateOfBirth) return "N/A";
+
     const today = new Date();
     const birthDate = new Date(dateOfBirth);
     let age = today.getFullYear() - birthDate.getFullYear();
@@ -265,7 +268,10 @@ export default function PatientsPage() {
                                 </span>
                                 <span className="text-xs text-muted-foreground block">
                                   {format(
-                                    new Date(patient.dateOfBirth),
+                                    typeof patient.dateOfBirth === "object" &&
+                                      "toDate" in patient.dateOfBirth
+                                      ? patient.dateOfBirth.toDate()
+                                      : new Date(patient.dateOfBirth),
                                     "dd MMM yyyy",
                                     { locale: es }
                                   )}

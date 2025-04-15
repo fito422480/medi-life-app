@@ -15,7 +15,6 @@ import {
   Settings,
   LogOut,
   Menu,
-  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,7 +25,6 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import Link from "next/link";
-import Image from "next/image";
 
 export default function DashboardLayout({
   children,
@@ -115,9 +113,9 @@ export default function DashboardLayout({
   }
 
   // Filter navigation items based on user role
-  const filteredNavItems = navItems.filter((item) =>
-    item.roles.includes(user.role)
-  );
+  const filteredNavItems = user?.role
+    ? navItems.filter((item) => item.roles.includes(user.role ?? ""))
+    : [];
 
   return (
     <div className="flex min-h-screen bg-gray-50">

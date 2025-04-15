@@ -13,7 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CalendarPlus, CalendarDays, CheckCircle } from "lucide-react";
+import { CheckCircle } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 
 export default function CalendarPage() {

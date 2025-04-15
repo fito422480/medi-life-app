@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "@/app/globals.css";
-import { I18nProvider, getI18n } from "@/i18n/config";
+import { I18nProvider } from "@/i18n/config";
+import getI18n from "../../i18n/getI18n"; // Adjusted the path to match the correct file location
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProviderEnhanced } from "@/lib/hooks/use-auth-enhanced";
 import { Toaster } from "@/components/ui/sonner";
@@ -75,20 +76,22 @@ export async function generateMetadata({
   };
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
   params,
 }: Readonly<{
   children: React.ReactNode;
   params: { locale: string };
 }>) {
+  const localeData = await getI18n(params.locale);
+
   return (
     <html lang={params.locale} suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <I18nProvider locale={params.locale}>
+          <I18nProvider locale={localeData}>
             <AuthProviderEnhanced>
               {children}
               <Toaster closeButton position="top-right" />
