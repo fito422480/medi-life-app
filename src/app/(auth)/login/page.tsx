@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { signIn } from "next-auth/react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
 import Link from "next/link";
+import { useAuth } from "@/lib/hooks/use-auth";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -29,15 +29,32 @@ import { Loader2, LockKeyhole, Mail } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const formSchema = z.object({
-  email: z.string().email("Correo inválido"),
-  password: z.string().min(1, "La contraseña es obligatoria"),
+  email: z
+    .string()
+    .min(1, "El correo electrónico es obligatorio")
+    .email("Ingresa un correo electrónico válido"),
+  password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
 });
 
 export default function LoginPage() {
   const router = useRouter();
+  const { signIn, signInWithGoogleRedirect, user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
+  const [mounted, setMounted] = useState(false);
+
+  // Prevenir error de hidratación con extensiones del navegador
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Redirigir si el usuario ya está autenticado
+  useEffect(() => {
+    if (user) {
+      router.push("/dashboard");
+    }
+  }, [user, router]);
 
   const form = useForm({
     resolver: zodResolver(formSchema),
@@ -51,25 +68,67 @@ export default function LoginPage() {
     setIsLoading(true);
     setError("");
 
-    const res = await signIn("credentials", {
-      email: values.email,
-      password: values.password,
-      redirect: false,
-    });
+    try {
+      // Validar que el email y la contraseña no estén vacíos
+      if (!values.email || !values.password) {
+        setError("Por favor completa todos los campos.");
+        return;
+      }
 
-    setIsLoading(false);
+      await signIn(values.email, values.password);
+      router.push("/dashboard");
+    } catch (err: any) {
+      console.error("Error en login:", err);
 
-    if (res?.error) {
-      setError("Correo o contraseña incorrectos.");
-    } else {
-      router.push("/");
+      // Mostrar el mensaje de error personalizado del hook
+      if (err.code === "auth/invalid-credential") {
+        setError(
+          "Correo o contraseña incorrectos. Por favor, verifica tus credenciales."
+        );
+      } else if (err.code === "auth/user-not-found") {
+        setError("No existe una cuenta con este correo electrónico.");
+      } else if (err.code === "auth/wrong-password") {
+        setError("La contraseña es incorrecta.");
+      } else if (err.code === "auth/too-many-requests") {
+        setError("Demasiados intentos fallidos. Por favor, intenta más tarde.");
+      } else {
+        setError("Error al iniciar sesión. Por favor, intenta nuevamente.");
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
-    await signIn("google");
+    setError("");
+
+    try {
+      // Usar redirección en lugar de popup
+      await signInWithGoogleRedirect();
+      // El usuario será redirigido a Google y luego de vuelta a la app
+    } catch (err: any) {
+      console.error("Error en login con Google:", err);
+      setError(
+        "Error al iniciar sesión con Google. Por favor, intenta nuevamente."
+      );
+      setGoogleLoading(false);
+    }
   };
+
+  // Renderizar un placeholder mientras se monta el componente
+  if (!mounted) {
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-gray-400 to-indigo-100">
+        <div className="w-full max-w-md px-6 py-8 bg-white shadow-lg rounded-3xl">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-200 rounded w-3/4 mx-auto mb-4"></div>
+            <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto mb-8"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-gray-400 to-indigo-100">
@@ -110,6 +169,9 @@ export default function LoginPage() {
                           <Input
                             placeholder="tu@correo.com"
                             className="pl-10 focus:ring-2 focus:ring-primary focus:outline-none"
+                            autoComplete="email"
+                            spellCheck="false"
+                            data-lpignore="true"
                             {...field}
                           />
                         </div>
@@ -142,6 +204,8 @@ export default function LoginPage() {
                             type="password"
                             placeholder="••••••••"
                             className="pl-10 focus:ring-2 focus:ring-primary focus:outline-none"
+                            autoComplete="current-password"
+                            data-lpignore="true"
                             {...field}
                           />
                         </div>
@@ -186,7 +250,7 @@ export default function LoginPage() {
               {googleLoading ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Iniciando con Google...
+                  Redirigiendo a Google...
                 </>
               ) : (
                 <>
@@ -216,6 +280,11 @@ export default function LoginPage() {
                 </>
               )}
             </Button>
+
+            <p className="text-xs text-center text-gray-500 mt-4">
+              Si tienes problemas con el inicio de sesión, asegúrate de permitir
+              cookies de terceros en tu navegador.
+            </p>
           </CardContent>
         </Card>
       </div>

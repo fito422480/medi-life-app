@@ -3,20 +3,14 @@ import {
   enableNetwork,
   disableNetwork,
   getFirestore,
-  Firestore,
-  collection,
-  doc,
-  getDoc,
 } from "firebase/firestore";
-import { db as importedDb } from "./config"; // Importación corregida
+import { db } from "./config";
 
-const db: Firestore = importedDb as Firestore;
 // Verificar conexión de Firestore
 export async function checkFirestoreConnection(): Promise<boolean> {
   try {
-    await enableNetwork(db as Firestore);
+    await enableNetwork(db);
     console.log("Firestore network enabled");
-    return true;
     return true;
   } catch (error) {
     console.error("Error enabling Firestore network:", error);
