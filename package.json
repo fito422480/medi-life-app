@@ -4,12 +4,22 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/performance-monitor.js && next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "prepare": "husky",
+    "performance:log": "node scripts/performance-monitor.js"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --fix"
+    ]
   },
   "dependencies": {
+    "@eslint/js": "^9.25.1",
     "@hookform/resolvers": "^5.0.1",
+    "@next/eslint-plugin-next": "^15.3.1",
     "@radix-ui/react-accordion": "^1.2.4",
     "@radix-ui/react-alert-dialog": "^1.1.7",
     "@radix-ui/react-aspect-ratio": "^1.1.3",
@@ -43,6 +53,7 @@
     "cmdk": "^1.1.1",
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.6.0",
+    "eslint": "^9.25.1",
     "firebase": "^11.6.0",
     "firebase-admin": "^13.2.0",
     "input-otp": "^1.4.2",
@@ -59,6 +70,7 @@
     "sonner": "^2.0.3",
     "tailwind-merge": "^3.2.0",
     "tw-animate-css": "^1.2.5",
+    "typescript-eslint": "^8.31.0",
     "vaul": "^1.1.2",
     "zod": "^3.24.2"
   },
@@ -70,8 +82,12 @@
     "@types/react-dom": "^19",
     "@typescript-eslint/eslint-plugin": "^8.30.1",
     "@typescript-eslint/parser": "^8.30.1",
-    "eslint": "^9.24.0",
     "eslint-config-next": "15.3.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^6.0.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.1",
     "tailwindcss": "^4",
     "typescript": "^5.8.3"
   }

@@ -6,10 +6,10 @@ import { cookies } from "next/headers";
  * API endpoint para verificar la sesión del usuario
  * Utilizado por el middleware y el cliente para validar tokens
  */
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     // Obtener el token de la sesión desde las cookies
-    const sessionCookie = cookies().get("session")?.value;
+    const sessionCookie = (await cookies()).get("session")?.value;
 
     if (!sessionCookie) {
       return NextResponse.json(
@@ -35,7 +35,8 @@ export async function POST(request: NextRequest) {
         role: decodedClaim.role,
       },
     });
-  } catch (error) {
+  } catch (err: unknown) {
+    console.error("Session verification error:", err);
     // En caso de error, el token es inválido o ha expirado
     return NextResponse.json(
       {
@@ -55,7 +56,7 @@ export async function POST(request: NextRequest) {
 export async function GET() {
   try {
     // Obtener el token de la sesión desde las cookies
-    const sessionCookie = cookies().get("session")?.value;
+    const sessionCookie = (await cookies()).get("session")?.value;
 
     if (!sessionCookie) {
       return NextResponse.json({ isValid: false });
@@ -66,7 +67,8 @@ export async function GET() {
 
     // Si no hay errores, la sesión es válida
     return NextResponse.json({ isValid: true });
-  } catch (error) {
+  } catch (err: unknown) {
+    console.error("Session check error:", err);
     // Si hay un error, la sesión es inválida
     return NextResponse.json({ isValid: false });
   }

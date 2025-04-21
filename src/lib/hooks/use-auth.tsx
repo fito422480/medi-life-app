@@ -26,10 +26,8 @@ import {
   getPatientProfile,
 } from "@/lib/firebase/db";
 
-// Tipos de roles para usuarios
 export type UserRole = "ADMIN" | "DOCTOR" | "PATIENT";
 
-// Interfaz extendida de User para incluir propiedades personalizadas
 export interface User extends Omit<FirebaseUser, "providerId"> {
   role?: UserRole;
   displayName: string | null;
@@ -53,7 +51,6 @@ export interface User extends Omit<FirebaseUser, "providerId"> {
   updatedAt?: Date;
 }
 
-// Interfaz para el contexto de autenticación
 interface AuthContextType {
   user: User | null;
   loading: boolean;
@@ -70,7 +67,6 @@ interface AuthContextType {
   resetPassword: (email: string) => Promise<void>;
 }
 
-// Valor por defecto para el contexto
 const defaultAuthContext: AuthContextType = {
   user: null,
   loading: true,
@@ -82,33 +78,26 @@ const defaultAuthContext: AuthContextType = {
   resetPassword: async () => {},
 };
 
-// Creación del contexto
 const AuthContext = createContext<AuthContextType>(defaultAuthContext);
 
-// Hook personalizado para acceder al contexto
 export const useAuth = () => useContext(AuthContext);
 
-// Proveedor del contexto de autenticación
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Función para obtener el perfil completo del usuario
   const fetchUserProfile = async (firebaseUser: FirebaseUser) => {
     try {
-      // Obtener perfil básico
       const userProfile = await getUserProfile(firebaseUser.uid);
 
       if (!userProfile) {
-        // Si no hay perfil, devolver solo la información básica
         return {
           ...firebaseUser,
           role: undefined,
         } as User;
       }
 
-      // Determine which additional profile to fetch based on role
       let additionalProfile = null;
       if (userProfile.role === "DOCTOR") {
         additionalProfile = await getDoctorProfile(firebaseUser.uid);
@@ -116,7 +105,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         additionalProfile = await getPatientProfile(firebaseUser.uid);
       }
 
-      // Combine Firebase user with profiles
       return {
         ...firebaseUser,
         ...userProfile,
@@ -128,7 +116,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Escucha de cambios en el estado de autenticación
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setLoading(true);
@@ -147,11 +134,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     });
 
-    // Limpiar la suscripción
     return () => unsubscribe();
   }, []);
 
-  // Iniciar sesión con correo y contraseña
   const signIn = async (email: string, password: string) => {
     setLoading(true);
     setError(null);
@@ -163,20 +148,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       );
       const fullUser = await fetchUserProfile(userCredential.user);
       setUser(fullUser);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Sign in error:", error);
-      setError(
-        error.code === "auth/invalid-credential"
-          ? "Credenciales inválidas. Verifica tu correo y contraseña."
-          : "Error al iniciar sesión. Inténtalo de nuevo."
-      );
+      if (error instanceof Error) {
+        const errorCode = (error as { code?: string }).code;
+        setError(
+          errorCode === "auth/invalid-credential"
+            ? "Credenciales inválidas. Verifica tu correo y contraseña."
+            : "Error al iniciar sesión. Inténtalo de nuevo."
+        );
+      }
       throw error;
     } finally {
       setLoading(false);
     }
   };
 
-  // Registrar nuevo usuario
   const signUp = async (
     email: string,
     password: string,
@@ -193,7 +180,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       );
       const uid = userCredential.user.uid;
 
-      // Crear perfil básico
       const baseUserData = {
         email,
         role,
@@ -202,59 +188,54 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         ...userData,
       };
 
-      // Guardar perfil de usuario
       await createUserProfile(uid, baseUserData);
 
-      // Crear perfil adicional según el rol
       if (role === "DOCTOR") {
         await createDoctorProfile(uid, userData);
       } else if (role === "PATIENT") {
         await createPatientProfile(uid, userData);
       }
 
-      // Obtener perfil completo
       const fullUser = await fetchUserProfile(userCredential.user);
       setUser(fullUser);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Sign up error:", error);
-      setError(
-        error.code === "auth/email-already-in-use"
-          ? "Este correo ya está en uso. Intenta con otro o recupera tu contraseña."
-          : "Error al crear la cuenta. Inténtalo de nuevo."
-      );
+      if (error instanceof Error) {
+        const errorCode = (error as { code?: string }).code;
+        setError(
+          errorCode === "auth/email-already-in-use"
+            ? "Este correo ya está en uso. Intenta con otro o recupera tu contraseña."
+            : "Error al crear la cuenta. Inténtalo de nuevo."
+        );
+      }
       throw error;
     } finally {
       setLoading(false);
     }
   };
 
-  // Iniciar sesión con Google
   const signInWithGoogle = async () => {
     setLoading(true);
     setError(null);
     try {
       const userCredential = await signInWithPopup(auth, googleProvider);
 
-      // Verificar si el usuario ya existe
       const existingProfile = await getUserProfile(userCredential.user.uid);
 
       if (!existingProfile) {
-        // Si es nuevo, crear perfil básico
         await createUserProfile(userCredential.user.uid, {
           email: userCredential.user.email,
           displayName: userCredential.user.displayName,
           photoURL: userCredential.user.photoURL,
-          role: "PATIENT", // Por defecto, los usuarios de Google son pacientes
+          role: "PATIENT",
         });
 
-        // Crear perfil de paciente
         await createPatientProfile(userCredential.user.uid, {});
       }
 
-      // Obtener perfil completo
       const fullUser = await fetchUserProfile(userCredential.user);
       setUser(fullUser);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Google sign in error:", error);
       setError("Error al iniciar sesión con Google. Inténtalo de nuevo.");
       throw error;
@@ -263,7 +244,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Cerrar sesión
   const signOut = async () => {
     setLoading(true);
     try {
@@ -278,26 +258,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Restablecer contraseña
   const resetPassword = async (email: string) => {
     setLoading(true);
     setError(null);
     try {
       await sendPasswordResetEmail(auth, email);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Password reset error:", error);
-      setError(
-        error.code === "auth/user-not-found"
-          ? "No se encontró ninguna cuenta con este correo"
-          : "Error al enviar el correo de restablecimiento"
-      );
+      if (error instanceof Error) {
+        const errorCode = (error as { code?: string }).code;
+        setError(
+          errorCode === "auth/user-not-found"
+            ? "No se encontró ninguna cuenta con este correo"
+            : "Error al enviar el correo de restablecimiento"
+        );
+      }
       throw error;
     } finally {
       setLoading(false);
     }
   };
 
-  // Valor del contexto
   const value = {
     user,
     loading,

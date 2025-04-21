@@ -1,10 +1,28 @@
 // src/lib/types.ts
 import { Timestamp } from "firebase/firestore";
 
-// Tipos de roles para usuarios
-export type UserRole = "ADMIN" | "DOCTOR" | "PATIENT";
+// ─────────────────────────────────────────────────────────────
+// ENUMS Y TYPES ───────────────────────────────────────────────
 
-// Interfaz básica de usuario
+export type UserRole = "ADMIN" | "DOCTOR" | "PATIENT";
+export type Gender = "MALE" | "FEMALE" | "OTHER";
+
+// Especialidades médicas comunes (puedes extenderlo)
+export enum Specialty {
+  GENERAL = "General Medicine",
+  CARDIOLOGY = "Cardiology",
+  DERMATOLOGY = "Dermatology",
+  PEDIATRICS = "Pediatrics",
+  NEUROLOGY = "Neurology",
+  // etc.
+}
+
+// Tipo utilitario para fechas (puedes cambiar si lo necesitás más flexible)
+export type FirestoreDate = Timestamp;
+
+// ─────────────────────────────────────────────────────────────
+// USUARIOS ─────────────────────────────────────────────────────
+
 export interface User {
   uid: string;
   email: string | null;
@@ -13,14 +31,14 @@ export interface User {
   role?: UserRole;
   phone?: string;
   address?: string;
-  createdAt?: Timestamp;
-  updatedAt?: Timestamp;
+  createdAt?: FirestoreDate;
+  updatedAt?: FirestoreDate;
 }
 
-// Interfaz para doctores
+// DOCTOR
 export interface Doctor extends User {
   role: "DOCTOR";
-  specialty: string;
+  specialty: Specialty;
   licenseNumber: string;
   bio?: string;
   availability?: {
@@ -30,20 +48,18 @@ export interface Doctor extends User {
   reviewCount?: number;
 }
 
-// Interfaz para pacientes
-export interface Patient {
-  uid: string;
-  displayName?: string;
-  email?: string;
-  phone?: string;
-  role: string;
-  gender?: "MALE" | "FEMALE" | "OTHER";
-  dateOfBirth?: string | Date | Timestamp | null; // Añadir Timestamp si usas Firestore
+// PACIENTE
+export interface Patient extends User {
+  role: "PATIENT";
+  gender?: Gender;
+  dateOfBirth?: string | Date | FirebaseFirestore.Timestamp | null;
   bloodType?: string;
-  allergies?: string[]; // Allow additional properties
+  allergies?: string[];
 }
 
-// Estados posibles de una cita
+// ─────────────────────────────────────────────────────────────
+// CITAS MÉDICAS ────────────────────────────────────────────────
+
 export type AppointmentStatus =
   | "SCHEDULED"
   | "CONFIRMED"
@@ -51,7 +67,6 @@ export type AppointmentStatus =
   | "CANCELLED"
   | "MISSED";
 
-// Mapeo de estados a nombres legibles para el usuario
 export const appointmentStatusNames: Record<AppointmentStatus, string> = {
   SCHEDULED: "Pendiente",
   CONFIRMED: "Confirmada",
@@ -60,7 +75,6 @@ export const appointmentStatusNames: Record<AppointmentStatus, string> = {
   MISSED: "No asistió",
 };
 
-// Mapeo de estados a colores de interfaz
 export const appointmentStatusColors: Record<AppointmentStatus, string> = {
   SCHEDULED: "bg-yellow-100 text-yellow-800 hover:bg-yellow-200",
   CONFIRMED: "bg-green-100 text-green-800 hover:bg-green-200",
@@ -69,23 +83,22 @@ export const appointmentStatusColors: Record<AppointmentStatus, string> = {
   MISSED: "bg-gray-100 text-gray-800 hover:bg-gray-200",
 };
 
-// Interfaz para citas médicas
 export interface Appointment {
   id?: string;
   doctorId: string;
   patientId: string;
-  date: Timestamp | Date;
-  duration: number; // duración en minutos
+  date: FirestoreDate | Date;
+  duration: number; // minutos
   reason: string;
   status: AppointmentStatus;
   notes?: string;
   diagnosis?: string;
   treatment?: string;
-  followUp?: Timestamp | Date;
-  createdAt?: Timestamp;
-  updatedAt?: Timestamp;
+  followUp?: FirestoreDate | Date;
+  createdAt?: FirestoreDate;
+  updatedAt?: FirestoreDate;
 
-  // Campos adicionales para UI
+  // Para UI
   doctorName?: string;
   doctorSpecialty?: string;
   patientName?: string;
@@ -93,7 +106,9 @@ export interface Appointment {
   endTime?: string;
 }
 
-// Interfaz para medicaciones
+// ─────────────────────────────────────────────────────────────
+// MEDICACIONES ────────────────────────────────────────────────
+
 export interface Medication {
   id?: string;
   patientId: string;
@@ -101,27 +116,31 @@ export interface Medication {
   name: string;
   dosage: string;
   frequency: string;
-  startDate: Timestamp | Date;
-  endDate?: Timestamp | Date;
+  startDate: FirestoreDate | Date;
+  endDate?: FirestoreDate | Date;
   instructions?: string;
   sideEffects?: string[];
-  createdAt?: Timestamp;
-  updatedAt?: Timestamp;
+  createdAt?: FirestoreDate;
+  updatedAt?: FirestoreDate;
 }
 
-// Interfaz para disponibilidad de horarios
+// ─────────────────────────────────────────────────────────────
+// DISPONIBILIDAD DE HORARIOS ─────────────────────────────────
+
 export interface TimeSlot {
-  start: string; // formato HH:MM
-  end: string; // formato HH:MM
+  start: string; // HH:MM
+  end: string; // HH:MM
   available: boolean;
 }
 
 export interface DaySchedule {
-  date: string; // formato YYYY-MM-DD
+  date: string; // YYYY-MM-DD
   slots: TimeSlot[];
 }
 
-// Interfaz para revisiones/valoraciones
+// ─────────────────────────────────────────────────────────────
+// RESEÑAS ─────────────────────────────────────────────────────
+
 export interface Review {
   id?: string;
   doctorId: string;
@@ -129,17 +148,21 @@ export interface Review {
   appointmentId: string;
   rating: number; // 1-5
   comment?: string;
-  createdAt?: Timestamp;
+  createdAt?: FirestoreDate;
 }
 
-// Interfaz para notificaciones
+// ─────────────────────────────────────────────────────────────
+// NOTIFICACIONES ──────────────────────────────────────────────
+
+export type NotificationType = "APPOINTMENT" | "REMINDER" | "SYSTEM";
+
 export interface Notification {
   id?: string;
   userId: string;
   title: string;
   message: string;
-  type: "APPOINTMENT" | "REMINDER" | "SYSTEM";
+  type: NotificationType;
   read: boolean;
-  relatedId?: string; // ID relacionado (por ejemplo, ID de cita)
-  createdAt: Timestamp;
+  relatedId?: string;
+  createdAt: FirestoreDate;
 }

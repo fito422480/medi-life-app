@@ -30,17 +30,7 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
-interface Appointment {
-  id: string;
-  status: string;
-  date: Date;
-  startTime: string;
-  endTime: string;
-  reason: string;
-  patientName?: string;
-  doctorName?: string;
-  doctorSpecialty?: string;
-}
+import { Appointment } from "@/lib/types";
 
 interface Profile {
   displayName: string;
@@ -89,21 +79,30 @@ export default function DashboardPage() {
       try {
         if (user.role === "DOCTOR") {
           const doctorProfile = await getDoctorProfile(user.uid);
-          setProfile(doctorProfile);
+          setProfile({
+            ...doctorProfile,
+            displayName: doctorProfile?.displayName || "Nombre no disponible",
+          });
 
           const doctorAppointments = await getDoctorAppointments(user.uid);
           setAppointments(doctorAppointments);
           calculateStats(doctorAppointments);
         } else if (user.role === "PATIENT") {
           const patientProfile = await getPatientProfile(user.uid);
-          setProfile(patientProfile);
+          setProfile({
+            ...patientProfile,
+            displayName: patientProfile?.displayName || "Nombre no disponible",
+          });
 
           const patientAppointments = await getPatientAppointments(user.uid);
           setAppointments(patientAppointments);
           calculateStats(patientAppointments);
         } else {
           const adminProfile = await getUserProfile(user.uid);
-          setProfile(adminProfile);
+          setProfile({
+            ...adminProfile,
+            displayName: adminProfile?.displayName || "Nombre no disponible",
+          });
         }
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
@@ -252,8 +251,12 @@ export default function DashboardPage() {
                     <div className="flex items-center gap-2">
                       <h3 className="font-medium">
                         {user?.role === "DOCTOR"
-                          ? `Paciente: ${appointment.patientName}`
-                          : `Dr. ${appointment.doctorName} - ${appointment.doctorSpecialty}`}
+                          ? `Paciente: ${
+                              appointment.patientName || appointment.patientId || "Nombre no disponible"
+                            }`
+                          : `Dr. ${
+                              appointment.doctorId || "ID no disponible"
+                            }`}
                       </h3>
                       {getStatusBadge(appointment.status)}
                     </div>
@@ -261,7 +264,7 @@ export default function DashboardPage() {
                       {format(appointment.date, "EEEE d 'de' MMMM 'de' yyyy", {
                         locale: es,
                       })}{" "}
-                      • {appointment.startTime} - {appointment.endTime}
+                      • {appointment.time || "Hora no disponible"}
                     </p>
                     <p className="text-sm">
                       {appointment.reason.substring(0, 100)}

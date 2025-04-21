@@ -48,22 +48,32 @@ export type Patient = User & {
   emergencyContact?: EmergencyContact;
 };
 
-export type Appointment = {
-  id?: string;
-  patientId: string;
-  doctorId: string;
-  date: Date;
-  status: AppointmentStatus;
-  reason?: string;
-  notes?: string;
-};
+export interface Appointment {
+  id: string;
+  date: Date | string;
+  time?: string; // <--- Agrega esta línea
+  status:
+    | "SCHEDULED"
+    | "CONFIRMED"
+    | "COMPLETED"
+    | "RESCHEDULED"
+    | "CANCELLED"
+    | "MISSED";
+  reason: string;
+  patientId?: string;
+  patientName?: string;
+  doctorId?: string;
+  doctorName?: string;
+  // ...otras propiedades...
+}
 
 export type AppointmentStatus =
   | "SCHEDULED"
   | "CONFIRMED"
   | "COMPLETED"
+  | "RESCHEDULED"
   | "CANCELLED"
-  | "RESCHEDULED";
+  | "MISSED";
 
 export type Medication = {
   id?: string;

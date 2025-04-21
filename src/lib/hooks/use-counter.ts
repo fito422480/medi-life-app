@@ -30,7 +30,6 @@ export function useCounter(
 
     let currentCount = 0;
     let animationFrameId: number;
-    let timeoutId: NodeJS.Timeout;
 
     const animate = () => {
       // Incrementar el contador
@@ -50,7 +49,7 @@ export function useCounter(
     };
 
     // Iniciar la animación después del retraso especificado
-    timeoutId = setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       animate();
     }, startDelay);
 

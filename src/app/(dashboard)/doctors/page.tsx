@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Tabs } from "@/components/ui/tabs";
+// Tabs eliminado aquí
 import {
   Search,
   CalendarPlus,

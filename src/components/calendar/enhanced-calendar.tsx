@@ -190,12 +190,12 @@ export function EnhancedCalendar({
         <div className="flex items-center gap-2 mt-2 sm:mt-0">
           <div className="flex bg-muted rounded-lg p-0.5">
             <Button
-              variant={view === Views.MONTH ? "default" : "ghost"}
+            variant={view === Views.MONTH ? "default" : "ghost"}
               size="sm"
               className="rounded-lg"
               onClick={() => onView(Views.MONTH)}
             >
-              {t("appointments.month")}
+              {t("month")}
             </Button>
             <Button
               variant={view === Views.WEEK ? "default" : "ghost"}
@@ -203,7 +203,7 @@ export function EnhancedCalendar({
               className="rounded-lg"
               onClick={() => onView(Views.WEEK)}
             >
-              {t("appointments.week")}
+              {t("week")}
             </Button>
             <Button
               variant={view === Views.DAY ? "default" : "ghost"}
@@ -211,7 +211,7 @@ export function EnhancedCalendar({
               className="rounded-lg"
               onClick={() => onView(Views.DAY)}
             >
-              {t("appointments.day")}
+              {t("day")}
             </Button>
             <Button
               variant={view === Views.AGENDA ? "default" : "ghost"}
@@ -219,7 +219,7 @@ export function EnhancedCalendar({
               className="rounded-lg"
               onClick={() => onView(Views.AGENDA)}
             >
-              {t("appointments.agenda")}
+              {t("agenda")}
             </Button>
           </div>
           <Button size="sm" className="hidden sm:flex">

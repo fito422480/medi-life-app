@@ -5,8 +5,11 @@ import { getFirestore } from "firebase/firestore";
 
 // Depuración de variables de entorno
 console.log("Firebase Config: ", {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY ? 
+    process.env.NEXT_PUBLIC_FIREBASE_API_KEY.substring(0, 5) + "..." : 
+    "UNDEFINED",
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "UNDEFINED",
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "UNDEFINED",
 });
 
 const firebaseConfig = {
@@ -21,7 +24,7 @@ const firebaseConfig = {
 // Validación de configuración
 if (!firebaseConfig.apiKey) {
   throw new Error(
-    "Missing Firebase API Key. Verify your environment variables."
+    "Missing Firebase API Key. Verify your environment variables. Make sure you have a .env.local file with NEXT_PUBLIC_FIREBASE_API_KEY set."
   );
 }
 

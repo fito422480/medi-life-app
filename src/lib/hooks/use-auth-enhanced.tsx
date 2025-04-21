@@ -53,7 +53,6 @@ export function AuthProviderEnhanced({
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  // Verificar si la sesión en el servidor es válida
   const checkServerSession = async () => {
     try {
       const response = await fetch("/api/auth/verify-session");
@@ -65,13 +64,10 @@ export function AuthProviderEnhanced({
     }
   };
 
-  // Establecer la sesión en el servidor
   const setServerSession = async (user: FirebaseUser) => {
     try {
-      // Obtener token ID fresco
       const idToken = await getIdToken(user, true);
 
-      // Enviar token a la API para crear sesión
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: {
@@ -86,7 +82,6 @@ export function AuthProviderEnhanced({
         throw new Error(data.message || "Error creating server session");
       }
 
-      // Actualizar el estado del usuario con los datos de la API
       if (data.user) {
         setUser(data.user);
       }
@@ -99,17 +94,14 @@ export function AuthProviderEnhanced({
     }
   };
 
-  // Observador de estado de autenticación
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
       setFirebaseUser(authUser);
 
       if (authUser) {
-        // Usuario autenticado en Firebase, establecer sesión en servidor
         const sessionSuccess = await setServerSession(authUser);
 
         if (!sessionSuccess) {
-          // Si no se pudo establecer la sesión, cerrar sesión
           await firebaseSignOut(auth);
           setUser(null);
           setError(
@@ -117,14 +109,11 @@ export function AuthProviderEnhanced({
           );
         }
       } else {
-        // No hay usuario autenticado en Firebase
         setUser(null);
 
-        // Verificar si hay una sesión en el servidor que debería limpiarse
         const serverSessionValid = await checkServerSession();
 
         if (serverSessionValid) {
-          // Limpiar sesión en servidor
           await fetch("/api/auth/logout", { method: "POST" });
         }
       }
@@ -132,32 +121,20 @@ export function AuthProviderEnhanced({
       setLoading(false);
     });
 
-    // Limpiar suscripción al desmontar
     return () => unsubscribe();
   }, []);
 
-  // Iniciar sesión
   const signIn = async (email: string, password: string) => {
     setLoading(true);
     setError(null);
 
     try {
-      // Autenticar con Firebase
-      const userCredential = await signInWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
-
-      // Establecer sesión en el servidor (se maneja en el useEffect)
-      return;
-    } catch (error) {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (error: unknown) {
       console.error("Login error:", error);
 
-      // Manejar errores específicos
       if (error instanceof Error) {
-        // Mapear códigos de error de Firebase a mensajes amigables
-        const errorCode = (error as any).code;
+        const errorCode = (error as { code?: string }).code;
         const errorMap: Record<string, string> = {
           "auth/user-not-found":
             "No existe una cuenta con este correo electrónico",
@@ -167,8 +144,8 @@ export function AuthProviderEnhanced({
             "Demasiados intentos fallidos. Intente más tarde",
         };
 
-        setError(errorMap[errorCode] || error.message);
-        toast.error(errorMap[errorCode] || error.message);
+        setError(errorMap[errorCode || ""] || error.message);
+        toast.error(errorMap[errorCode || ""] || error.message);
       } else {
         setError("Error desconocido al iniciar sesión");
         toast.error("Error desconocido al iniciar sesión");
@@ -178,31 +155,21 @@ export function AuthProviderEnhanced({
     }
   };
 
-  // Registrar nuevo usuario
   const signUp = async (
     email: string,
     password: string,
-    userData: Partial<User>
+    _userData: Partial<User>
   ) => {
     setLoading(true);
     setError(null);
 
     try {
-      // Crear usuario en Firebase Auth
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
-
-      // El resto del proceso (crear perfil en Firestore) se maneja en la página de registro
-      return;
-    } catch (error) {
+      await createUserWithEmailAndPassword(auth, email, password);
+    } catch (error: unknown) {
       console.error("Registration error:", error);
 
       if (error instanceof Error) {
-        // Mapear códigos de error de Firebase a mensajes amigables
-        const errorCode = (error as any).code;
+        const errorCode = (error as { code?: string }).code;
         const errorMap: Record<string, string> = {
           "auth/email-already-in-use":
             "Este correo electrónico ya está registrado",
@@ -210,8 +177,8 @@ export function AuthProviderEnhanced({
           "auth/weak-password": "La contraseña es demasiado débil",
         };
 
-        setError(errorMap[errorCode] || error.message);
-        toast.error(errorMap[errorCode] || error.message);
+        setError(errorMap[errorCode || ""] || error.message);
+        toast.error(errorMap[errorCode || ""] || error.message);
       } else {
         setError("Error desconocido al registrarse");
         toast.error("Error desconocido al registrarse");
@@ -221,21 +188,15 @@ export function AuthProviderEnhanced({
     }
   };
 
-  // Cerrar sesión
   const signOut = async () => {
     try {
       setLoading(true);
 
-      // Cerrar sesión en Firebase
       await firebaseSignOut(auth);
-
-      // Cerrar sesión en el servidor
       await fetch("/api/auth/logout", { method: "POST" });
 
-      // Redirigir al login
       router.push("/login");
 
-      // Limpiar estado
       setUser(null);
       setError(null);
     } catch (error) {
@@ -247,7 +208,6 @@ export function AuthProviderEnhanced({
     }
   };
 
-  // Actualizar estado del usuario (usado después de actualizaciones de perfil)
   const updateUserState = (userData: Partial<User>) => {
     if (user) {
       setUser({ ...user, ...userData });

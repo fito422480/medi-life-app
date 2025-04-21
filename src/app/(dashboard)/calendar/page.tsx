@@ -5,13 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { getDoctorProfile, getPatientProfile } from "@/lib/firebase/db";
 import { AppointmentCalendar } from "@/components/calendar/appointment-calendar";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
@@ -25,8 +19,8 @@ export default function CalendarPage() {
   const [patientId, setPatientId] = useState<string | undefined>(
     searchParams.get("appointmentId") || undefined
   );
-  const [selectedDoctor, setSelectedDoctor] = useState<any>(null);
-  const [selectedPatient, setSelectedPatient] = useState<any>(null);
+  const [selectedDoctor, setSelectedDoctor] = useState<unknown>(null);
+  const [selectedPatient, setSelectedPatient] = useState<unknown>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

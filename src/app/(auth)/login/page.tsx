@@ -3,12 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import {
-  signInWithEmailAndPassword,
-  GoogleAuthProvider,
-  signInWithPopup,
-} from "firebase/auth";
-import { auth } from "@/lib/firebase/config";
+import { useAuth } from "@/lib/hooks/use-auth";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -41,6 +36,12 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
+  const {
+    signIn,
+    signInWithGoogle,
+    error: authError,
+    loading: authLoading,
+  } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -58,24 +59,13 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      await signInWithEmailAndPassword(auth, data.email, data.password);
+      await signIn(data.email, data.password);
       router.push("/dashboard");
     } catch (err: unknown) {
       console.error("Login error:", err);
-      const errorMap: Record<string, string> = {
-        "auth/user-not-found":
-          "No existe una cuenta con este correo electrónico",
-        "auth/wrong-password": "Contraseña incorrecta",
-        "auth/invalid-credential": "Credenciales incorrectas",
-        "auth/too-many-requests":
-          "Demasiados intentos fallidos. Intente más tarde",
-      };
 
-      if (err instanceof Error && "code" in err) {
-        setError(
-          errorMap[err.code as string] ||
-            "Ha ocurrido un error al iniciar sesión"
-        );
+      if (err instanceof Error) {
+        setError(err.message);
       } else {
         setError("Ha ocurrido un error al iniciar sesión");
       }
@@ -89,22 +79,13 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      await signInWithGoogle();
       router.push("/dashboard");
     } catch (err: unknown) {
       console.error("Google Sign-In error:", err);
-      const errorMap: Record<string, string> = {
-        "auth/popup-closed-by-user": "Inicio de sesión cancelado",
-        "auth/cancelled-popup-request":
-          "Solicitud de inicio de sesión cancelada",
-        "auth/popup-blocked": "El popup de inicio de sesión fue bloqueado",
-      };
 
-      if (err instanceof Error && "code" in err) {
-        setError(
-          errorMap[err.code as string] || "Error al iniciar sesión con Google"
-        );
+      if (err instanceof Error) {
+        setError(err.message);
       } else {
         setError("Error al iniciar sesión con Google");
       }
@@ -112,6 +93,8 @@ export default function LoginPage() {
       setGoogleLoading(false);
     }
   };
+
+  const displayError = error || authError;
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-b from-blue-50 to-indigo-100">
@@ -125,9 +108,9 @@ export default function LoginPage() {
           </CardHeader>
 
           <CardContent>
-            {error && (
+            {displayError && (
               <Alert variant="destructive" className="mb-6">
-                <AlertDescription>{error}</AlertDescription>
+                <AlertDescription>{displayError}</AlertDescription>
               </Alert>
             )}
 
@@ -187,8 +170,12 @@ export default function LoginPage() {
                   )}
                 />
 
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? (
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={isLoading || authLoading}
+                >
+                  {isLoading || authLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Iniciando sesión...
@@ -217,7 +204,7 @@ export default function LoginPage() {
               <Button
                 variant="outline"
                 onClick={handleGoogleSignIn}
-                disabled={googleLoading}
+                disabled={googleLoading || authLoading}
                 className="w-full"
               >
                 {googleLoading ? (
