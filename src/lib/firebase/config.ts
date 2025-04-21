@@ -1,16 +1,7 @@
 // src/lib/firebase/config.ts
-import { initializeApp, getApp, getApps } from "firebase/app";
-import { getAuth, GoogleAuthProvider } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
-
-// Depuración de variables de entorno
-console.log("Firebase Config: ", {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY ? 
-    process.env.NEXT_PUBLIC_FIREBASE_API_KEY.substring(0, 5) + "..." : 
-    "UNDEFINED",
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "UNDEFINED",
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "UNDEFINED",
-});
+import { initializeApp, getApps, getApp } from "firebase/app";
+import { getAuth, Auth } from "firebase/auth";
+import { getFirestore, Firestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -21,19 +12,13 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Validación de configuración
-if (!firebaseConfig.apiKey) {
-  throw new Error(
-    "Missing Firebase API Key. Verify your environment variables. Make sure you have a .env.local file with NEXT_PUBLIC_FIREBASE_API_KEY set."
-  );
-}
+// 🧠 Si ya hay apps inicializadas, usa esa. Si no, inicializa una nueva.
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-// Inicializar Firebase
-const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+export const auth: Auth = getAuth(app);
+export const db: Firestore = getFirestore(app);
 
-// Exportar servicios de Firebase
-const auth = getAuth(app);
-const db = getFirestore(app);
-const googleProvider = new GoogleAuthProvider();
-
-export { app, auth, db, googleProvider };
+export type FirebaseServices = {
+  auth: Auth;
+  db: Firestore;
+};

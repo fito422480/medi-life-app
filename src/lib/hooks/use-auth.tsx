@@ -15,8 +15,9 @@ import {
   signOut as firebaseSignOut,
   signInWithPopup,
   sendPasswordResetEmail,
+  GoogleAuthProvider,
 } from "firebase/auth";
-import { auth, googleProvider } from "@/lib/firebase/config";
+import { auth } from "@/lib/firebase/config";
 import {
   createUserProfile,
   getUserProfile,
@@ -25,9 +26,9 @@ import {
   createPatientProfile,
   getPatientProfile,
 } from "@/lib/firebase/db";
+const googleProvider = new GoogleAuthProvider();
 
 export type UserRole = "ADMIN" | "DOCTOR" | "PATIENT";
-
 export interface User extends Omit<FirebaseUser, "providerId"> {
   role?: UserRole;
   displayName: string | null;
@@ -148,16 +149,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       );
       const fullUser = await fetchUserProfile(userCredential.user);
       setUser(fullUser);
-    } catch (error: unknown) {
+    } catch (error: any) {
       console.error("Sign in error:", error);
-      if (error instanceof Error) {
-        const errorCode = (error as { code?: string }).code;
-        setError(
-          errorCode === "auth/invalid-credential"
-            ? "Credenciales inválidas. Verifica tu correo y contraseña."
-            : "Error al iniciar sesión. Inténtalo de nuevo."
-        );
-      }
+      setError(
+        error.code === "auth/invalid-credential"
+          ? "Credenciales inválidas. Verifica tu correo y contraseña."
+          : "Error al iniciar sesión. Inténtalo de nuevo."
+      );
       throw error;
     } finally {
       setLoading(false);
@@ -181,33 +179,62 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const uid = userCredential.user.uid;
 
       const baseUserData = {
+        ...userData,
         email,
         role,
         displayName: userData.displayName || email.split("@")[0],
         photoURL: userData.photoURL || null,
-        ...userData,
       };
 
-      await createUserProfile(uid, baseUserData);
+      await createUserProfile(uid, {
+        ...baseUserData,
+        email: baseUserData.email || undefined,
+        displayName: baseUserData.displayName || undefined,
+        photoURL: baseUserData.photoURL || undefined,
+      });
 
       if (role === "DOCTOR") {
-        await createDoctorProfile(uid, userData);
+        const {
+          email,
+          displayName,
+          photoURL,
+          role: ignoredRole,
+          ...doctorData
+        } = userData;
+
+        const sanitizedDoctorData = Object.fromEntries(
+          Object.entries(doctorData).map(([key, val]) => [
+            key,
+            val !== null ? val : undefined,
+          ])
+        );
+
+        await createDoctorProfile(uid, sanitizedDoctorData);
       } else if (role === "PATIENT") {
-        await createPatientProfile(uid, userData);
+        const { email, ...patientData } = userData;
+
+        const sanitizedPatientData = Object.fromEntries(
+          Object.entries(patientData).map(([key, val]) => [
+            key,
+            val !== null ? val : undefined,
+          ])
+        );
+
+        await createPatientProfile(uid, {
+          ...sanitizedPatientData,
+          email: email || "",
+        });
       }
 
       const fullUser = await fetchUserProfile(userCredential.user);
       setUser(fullUser);
-    } catch (error: unknown) {
+    } catch (error: any) {
       console.error("Sign up error:", error);
-      if (error instanceof Error) {
-        const errorCode = (error as { code?: string }).code;
-        setError(
-          errorCode === "auth/email-already-in-use"
-            ? "Este correo ya está en uso. Intenta con otro o recupera tu contraseña."
-            : "Error al crear la cuenta. Inténtalo de nuevo."
-        );
-      }
+      setError(
+        error.code === "auth/email-already-in-use"
+          ? "Este correo ya está en uso. Intenta con otro o recupera tu contraseña."
+          : "Error al crear la cuenta. Inténtalo de nuevo."
+      );
       throw error;
     } finally {
       setLoading(false);
@@ -220,13 +247,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const userCredential = await signInWithPopup(auth, googleProvider);
 
-      const existingProfile = await getUserProfile(userCredential.user.uid);
+      let existingProfile = null;
+      let retries = 3;
+
+      while (retries > 0 && !existingProfile) {
+        try {
+          existingProfile = await getUserProfile(userCredential.user.uid);
+          break;
+        } catch (error) {
+          console.error(`Retry ${4 - retries} failed:`, error);
+          retries--;
+          if (retries > 0) {
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+          }
+        }
+      }
 
       if (!existingProfile) {
         await createUserProfile(userCredential.user.uid, {
-          email: userCredential.user.email,
-          displayName: userCredential.user.displayName,
-          photoURL: userCredential.user.photoURL,
+          email: userCredential.user.email ?? "",
+          displayName: userCredential.user.displayName ?? "",
+          photoURL: userCredential.user.photoURL ?? "",
           role: "PATIENT",
         });
 
@@ -235,9 +276,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       const fullUser = await fetchUserProfile(userCredential.user);
       setUser(fullUser);
-    } catch (error: unknown) {
+    } catch (error: any) {
       console.error("Google sign in error:", error);
-      setError("Error al iniciar sesión con Google. Inténtalo de nuevo.");
+      setError("Error al iniciar sesión con Google. Intenta de nuevo.");
       throw error;
     } finally {
       setLoading(false);
@@ -246,13 +287,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = async () => {
     setLoading(true);
+    setError(null);
     try {
       await firebaseSignOut(auth);
       setUser(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Sign out error:", error);
-      setError("Error al cerrar sesión");
-      throw error;
+      setError("Error al cerrar sesión. Inténtalo de nuevo.");
     } finally {
       setLoading(false);
     }
@@ -263,32 +304,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setError(null);
     try {
       await sendPasswordResetEmail(auth, email);
-    } catch (error: unknown) {
-      console.error("Password reset error:", error);
-      if (error instanceof Error) {
-        const errorCode = (error as { code?: string }).code;
-        setError(
-          errorCode === "auth/user-not-found"
-            ? "No se encontró ninguna cuenta con este correo"
-            : "Error al enviar el correo de restablecimiento"
-        );
-      }
+    } catch (error: any) {
+      console.error("Reset password error:", error);
+      setError("Error al enviar el correo de recuperación.");
       throw error;
     } finally {
       setLoading(false);
     }
   };
 
-  const value = {
-    user,
-    loading,
-    error,
-    signIn,
-    signUp,
-    signInWithGoogle,
-    signOut,
-    resetPassword,
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        error,
+        signIn,
+        signUp,
+        signInWithGoogle,
+        signOut,
+        resetPassword,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 };

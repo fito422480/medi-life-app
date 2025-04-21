@@ -7,7 +7,7 @@ import { cookies } from 'next/headers';
 export async function POST() {
   try {
     // Eliminar la cookie de sesión
-    cookies().delete('session');
+    (await cookies()).delete('session');
     
     // Responder con éxito
     return NextResponse.json({

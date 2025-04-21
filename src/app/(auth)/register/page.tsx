@@ -37,8 +37,6 @@ const baseRegisterSchema = z.object({
     .regex(/[!@#$%^&*()]/, "Debe contener al menos un símbolo"),
   confirmPassword: z.string(),
   role: z.enum(["PATIENT", "DOCTOR"]),
-  gender: z.enum(["MALE", "FEMALE", "OTHER"]).optional(),
-  birthDate: z.string().optional(),
 });
 
 const doctorRegisterSchema = baseRegisterSchema.extend({
@@ -48,14 +46,8 @@ const doctorRegisterSchema = baseRegisterSchema.extend({
 
 const registerSchema = z
   .discriminatedUnion("role", [
-    baseRegisterSchema.extend({
-      role: z.literal("PATIENT"),
-      specialty: z.string().optional(),
-      license: z.string().optional(),
-    }),
-    doctorRegisterSchema.extend({
-      role: z.literal("DOCTOR"),
-    }),
+    baseRegisterSchema.extend({ role: z.literal("PATIENT") }),
+    doctorRegisterSchema.extend({ role: z.literal("DOCTOR") }),
   ])
   .refine((data) => data.password === data.confirmPassword, {
     message: "Las contraseñas no coinciden",
@@ -67,7 +59,7 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 export default function RegisterPage() {
   const [activeTab, setActiveTab] = useState<"PATIENT" | "DOCTOR">("PATIENT");
 
-  const form = useForm<RegisterFormValues>({
+  const form = useForm<RegisterFormValues & { specialty?: string; license?: string }>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
       role: "PATIENT",
@@ -75,49 +67,45 @@ export default function RegisterPage() {
       email: "",
       password: "",
       confirmPassword: "",
-      gender: "OTHER",
-      birthDate: "",
       specialty: "",
       license: "",
     },
   });
 
-  const onSubmit = async (data: RegisterFormValues) => {
+  const onSubmit = (data: RegisterFormValues) => {
     console.log("Registro:", data);
-    // Implementar lógica de registro
+    // Aquí va tu lógica de registro...
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-b from-blue-50 to-indigo-100">
-      <div className="w-full max-w-md p-4">
-        <Card className="shadow-xl border-0">
-          <CardHeader className="space-y-1 text-center">
-            <CardTitle className="text-3xl font-bold">
+    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-gray-400 to-indigo-100">
+      <div className="w-full max-w-md px-6 py-8 bg-white shadow-lg rounded-3xl">
+        <Card className="border-none rounded-3xl">
+          <CardHeader className="text-center space-y-4">
+            <CardTitle className="text-4xl font-semibold text-gray-900">
               Crear una cuenta
             </CardTitle>
-            <CardDescription>
-              Completa el formulario para registrarte en MediAgenda
+            <CardDescription className="text-gray-600 text-sm">
+              Completa tus datos para unirte a MediAgenda
             </CardDescription>
           </CardHeader>
 
-          <CardContent>
+          <CardContent className="space-y-6">
             <Tabs
               value={activeTab}
-              onValueChange={(value) => {
-                const newRole = value as "PATIENT" | "DOCTOR";
-                setActiveTab(newRole);
-                form.setValue("role", newRole);
-
-                if (newRole === "PATIENT") {
-                  form.setValue("specialty", "");
-                  form.setValue("license", "");
-                }
+              onValueChange={(val) => {
+                setActiveTab(val as "PATIENT" | "DOCTOR");
+                form.setValue("role", val as "PATIENT" | "DOCTOR");
               }}
               className="mb-6"
             >
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="PATIENT">Paciente</TabsTrigger>
-                <TabsTrigger value="DOCTOR">Médico</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 rounded-lg bg-gray-100 p-1">
+                <TabsTrigger value="PATIENT" className="rounded-lg">
+                  Paciente
+                </TabsTrigger>
+                <TabsTrigger value="DOCTOR" className="rounded-lg">
+                  Médico
+                </TabsTrigger>
               </TabsList>
             </Tabs>
 
@@ -134,10 +122,13 @@ export default function RegisterPage() {
                       <FormLabel>Nombre Completo</FormLabel>
                       <FormControl>
                         <div className="relative">
-                          <User className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                          <User
+                            className="absolute left-3 top-3 h-5 w-5 text-gray-400"
+                            aria-hidden
+                          />
                           <Input
                             placeholder="Juan Pérez"
-                            className="pl-10"
+                            className="pl-10 focus:ring-2 focus:ring-primary focus:outline-none"
                             {...field}
                           />
                         </div>
@@ -155,10 +146,13 @@ export default function RegisterPage() {
                       <FormLabel>Correo Electrónico</FormLabel>
                       <FormControl>
                         <div className="relative">
-                          <Mail className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                          <Mail
+                            className="absolute left-3 top-3 h-5 w-5 text-gray-400"
+                            aria-hidden
+                          />
                           <Input
                             placeholder="tu@correo.com"
-                            className="pl-10"
+                            className="pl-10 focus:ring-2 focus:ring-primary focus:outline-none"
                             {...field}
                           />
                         </div>
@@ -177,11 +171,14 @@ export default function RegisterPage() {
                         <FormLabel>Contraseña</FormLabel>
                         <FormControl>
                           <div className="relative">
-                            <Lock className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                            <Lock
+                              className="absolute left-3 top-3 h-5 w-5 text-gray-400"
+                              aria-hidden
+                            />
                             <Input
                               type="password"
                               placeholder="••••••••"
-                              className="pl-10"
+                              className="pl-10 focus:ring-2 focus:ring-primary focus:outline-none"
                               {...field}
                             />
                           </div>
@@ -199,11 +196,14 @@ export default function RegisterPage() {
                         <FormLabel>Confirmar Contraseña</FormLabel>
                         <FormControl>
                           <div className="relative">
-                            <Lock className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                            <Lock
+                              className="absolute left-3 top-3 h-5 w-5 text-gray-400"
+                              aria-hidden
+                            />
                             <Input
                               type="password"
                               placeholder="••••••••"
-                              className="pl-10"
+                              className="pl-10 focus:ring-2 focus:ring-primary focus:outline-none"
                               {...field}
                             />
                           </div>
@@ -226,7 +226,7 @@ export default function RegisterPage() {
                             <Input
                               placeholder="Ej. Cardiología"
                               {...field}
-                              value={field.value || ""}
+                              className="focus:ring-2 focus:ring-primary focus:outline-none"
                             />
                           </FormControl>
                           <FormMessage />
@@ -242,9 +242,9 @@ export default function RegisterPage() {
                           <FormLabel>Número de Licencia</FormLabel>
                           <FormControl>
                             <Input
-                              placeholder="Número de licencia médica"
+                              placeholder="Licencia médica"
                               {...field}
-                              value={field.value || ""}
+                              className="focus:ring-2 focus:ring-primary focus:outline-none"
                             />
                           </FormControl>
                           <FormMessage />
@@ -254,14 +254,17 @@ export default function RegisterPage() {
                   </>
                 )}
 
-                <Button type="submit" className="w-full mt-4">
+                <Button
+                  type="submit"
+                  className="w-full py-3 bg-primary text-white rounded-lg hover:bg-primary-dark transition"
+                >
                   Siguiente
                 </Button>
               </form>
             </Form>
           </CardContent>
 
-          <div className="text-center text-sm text-muted-foreground pb-6">
+          <div className="text-center text-sm text-gray-600 pb-6">
             ¿Ya tienes una cuenta?{" "}
             <Link
               href="/login"
