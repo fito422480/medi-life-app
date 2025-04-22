@@ -46,7 +46,8 @@ import {
   Loader2,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { UserRole } from "@/lib/types";
+// Define UserRole here if not exported from "@/lib/types"
+type UserRole = "PATIENT" | "DOCTOR" | "ADMIN";
 
 export default function DashboardLayout({
   children,
@@ -101,7 +102,7 @@ export default function DashboardLayout({
 
   // Filtrar elementos de navegación según el rol del usuario
   const filteredNavItems = user
-    ? navigationItems.filter((item) => item.roles.includes(user.role))
+    ? navigationItems.filter((item) => item.roles.includes(user.role as UserRole))
     : [];
 
   const handleSignOut = async () => {
@@ -268,7 +269,7 @@ export default function DashboardLayout({
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="md:hidden">
                 <Menu className="h-5 w-5" />
-                <span className="sr-only">{t("common.menu")}</span>
+                <span className="sr-only">{t("common.appName")}</span>
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="sm:max-w-xs">

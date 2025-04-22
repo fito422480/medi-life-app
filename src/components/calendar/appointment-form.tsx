@@ -192,11 +192,10 @@ export function AppointmentForm({
         doctorId: selectedDoctor,
         patientName,
         doctorName,
-        doctorSpecialty,
-        date: selectedDate,
-        startTime,
-        endTime,
-        status: "PENDING",
+        date: selectedDate!,
+        startTime: startTime,
+        endTime: endTime,
+        status: "SCHEDULED",
         reason,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -278,7 +277,7 @@ export function AppointmentForm({
                 <Select
                   value={selectedDoctor}
                   onValueChange={setSelectedDoctor}
-                  disabled={user?.role === "DOCTOR"}
+                  disabled={user?.role ? String(user.role) !== "DOCTOR" : true}
                 >
                   <SelectTrigger id="doctor">
                     <SelectValue placeholder="Selecciona un médico" />
@@ -301,13 +300,13 @@ export function AppointmentForm({
               <Select
                 value={selectedPatient}
                 onValueChange={setSelectedPatient}
-                disabled={user?.role === "PATIENT"}
+                disabled={user?.role !== "DOCTOR"}
               >
                 <SelectTrigger id="patient">
                   <SelectValue placeholder="Selecciona un paciente" />
                 </SelectTrigger>
                 <SelectContent>
-                  {patients.map((patient) => (
+                  {patients?.map((patient) => (
                     <SelectItem key={patient.uid} value={patient.uid}>
                       {patient.displayName}
                     </SelectItem>

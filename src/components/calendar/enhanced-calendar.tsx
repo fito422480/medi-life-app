@@ -15,9 +15,15 @@ import {
   Plus,
 } from "lucide-react";
 import { useTheme } from "next-themes";
-import { AppointmentStatus } from "@/lib/types";
 import { useI18n } from "@/i18n/config";
 import { cn } from "@/lib/utils";
+
+export type AppointmentStatus =
+  | "PENDING"
+  | "CONFIRMED"
+  | "COMPLETED"
+  | "CANCELLED"
+  | "NO_SHOW";
 
 // Configurar localización de moment
 moment.locale("es");
@@ -59,6 +65,8 @@ interface EnhancedCalendarProps {
   toolbar?: boolean;
 }
 
+import type { View } from "react-big-calendar";
+
 export function EnhancedCalendar({
   events,
   onSelectEvent,
@@ -74,7 +82,7 @@ export function EnhancedCalendar({
   toolbar = true,
 }: EnhancedCalendarProps) {
   const [date, setDate] = useState(new Date());
-  const [view, setView] = useState(Views.WEEK);
+  const [view, setView] = useState<View>(Views.MONTH);
   const { theme } = useTheme();
   const t = useI18n();
   const [mounted, setMounted] = useState(false);
@@ -190,7 +198,7 @@ export function EnhancedCalendar({
         <div className="flex items-center gap-2 mt-2 sm:mt-0">
           <div className="flex bg-muted rounded-lg p-0.5">
             <Button
-            variant={view === Views.MONTH ? "default" : "ghost"}
+              variant={view === Views.MONTH ? "default" : "ghost"}
               size="sm"
               className="rounded-lg"
               onClick={() => onView(Views.MONTH)}
@@ -376,7 +384,7 @@ export function EnhancedCalendar({
             onSelectEvent={handleSelectEvent}
             selectable
             onSelectSlot={handleSelectSlot}
-            tooltipAccessor={(event) => event.title}
+            tooltipAccessor={(event: CalendarEvent) => event.title}
             eventPropGetter={eventPropGetter}
             dayPropGetter={dayPropGetter}
             slotPropGetter={slotPropGetter}
@@ -387,7 +395,7 @@ export function EnhancedCalendar({
             formats={formats}
             components={{
               toolbar: toolbar ? CustomToolbar : undefined,
-              event: (props) => {
+              event: (props: { event: CalendarEvent }) => {
                 const { event } = props;
                 return (
                   <Tooltip>
@@ -412,18 +420,18 @@ export function EnhancedCalendar({
             resourceIdAccessor={resourceIdAccessor}
             resourceTitleAccessor={resourceTitleAccessor}
             messages={{
-              today: t("common.today"),
-              previous: t("common.previous"),
-              next: t("common.next"),
-              month: t("appointments.month"),
-              week: t("appointments.week"),
-              day: t("appointments.day"),
-              agenda: t("appointments.agenda"),
-              date: t("appointments.date"),
-              time: t("appointments.time"),
-              event: t("appointments.appointment"),
-              noEventsInRange: t("appointments.noAppointments"),
-              showMore: (total) => `+ ${total} ${t("common.more")}`,
+              today: "common.today",
+              previous: "common.previous",
+              next: "common.next",
+              month: "month",
+              week: "week",
+              day: "day",
+              agenda: "agenda",
+              date: "date",
+              time: "time",
+              event: "event",
+              noEventsInRange: "noEventsInRange",
+              showMore: (total: number) => `+ ${total} ${t("common.more")}`,
             }}
           />
         </div>

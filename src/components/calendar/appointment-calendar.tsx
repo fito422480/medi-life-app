@@ -46,10 +46,10 @@ export function AppointmentCalendar({
   patientId,
 }: AppointmentCalendarProps) {
   const { user } = useAuth();
-  const { appointments, isLoading, error } = useAppointments(
+  const { appointments, isLoading, error } = useAppointments({
     doctorId,
-    patientId
-  );
+    patientId,
+  });
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [currentWeek, setCurrentWeek] = useState<Date[]>([]);
@@ -92,8 +92,11 @@ export function AppointmentCalendar({
       const aptDate = apt.date instanceof Date ? apt.date : new Date(apt.date);
       return (
         isSameDay(aptDate, date) &&
-        parseInt(apt.startTime.split(":")[0]) === hour &&
-        parseInt(apt.startTime.split(":")[1]) === minute
+        typeof apt.time === "string" &&
+        apt.time &&
+        parseInt(apt.time.split(":")[0]) === hour &&
+        apt.time.split(":")[1] !== undefined &&
+        parseInt(apt.time.split(":")[1]) === minute
       );
     });
 
@@ -114,8 +117,11 @@ export function AppointmentCalendar({
       const aptDate = apt.date instanceof Date ? apt.date : new Date(apt.date);
       return (
         isSameDay(aptDate, date) &&
-        parseInt(apt.startTime.split(":")[0]) === hour &&
-        parseInt(apt.startTime.split(":")[1]) === minute
+        typeof apt.time === "string" &&
+        apt.time &&
+        parseInt(apt.time.split(":")[0]) === hour &&
+        apt.time.split(":")[1] !== undefined &&
+        parseInt(apt.time.split(":")[1]) === minute
       );
     });
 
@@ -124,10 +130,13 @@ export function AppointmentCalendar({
     const appointment = appointmentsInSlot[0];
     const statusColors = {
       PENDING: "bg-yellow-100 border-yellow-300",
+      SCHEDULED: "bg-yellow-100 border-yellow-300",
       CONFIRMED: "bg-green-100 border-green-300",
       COMPLETED: "bg-blue-100 border-blue-300",
       CANCELLED: "bg-red-100 border-red-300",
       NO_SHOW: "bg-gray-100 border-gray-300",
+      MISSED: "bg-gray-100 border-gray-300",
+      RESCHEDULED: "bg-yellow-100 border-yellow-300",
     };
 
     return (
@@ -161,7 +170,7 @@ export function AppointmentCalendar({
     // Check if there's already an appointment in this slot
     const hasAppointment = appointments.some((apt) => {
       const aptDate = apt.date instanceof Date ? apt.date : new Date(apt.date);
-      return isSameDay(aptDate, date) && apt.startTime === slotTime;
+      return isSameDay(aptDate, date) && apt.time === slotTime;
     });
 
     if (hasAppointment) return false;
@@ -279,8 +288,10 @@ export function AppointmentCalendar({
                                 : new Date(apt.date);
                             return (
                               isSameDay(aptDate, day) &&
-                              parseInt(apt.startTime.split(":")[0]) === hour &&
-                              parseInt(apt.startTime.split(":")[1]) === minute
+                              typeof apt.time === "string" &&
+                              apt.time &&
+                              parseInt(apt.time.split(":")[0]) === hour &&
+                              parseInt(apt.time.split(":")[1]) === minute
                             );
                           });
 

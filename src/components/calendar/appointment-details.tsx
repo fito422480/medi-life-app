@@ -25,7 +25,14 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { Appointment, AppointmentStatus, Medication } from "@/lib/types";
+import { Appointment as BaseAppointment, AppointmentStatus, Medication } from "@/lib/types";
+
+// Extend Appointment type to include optional 'diagnosis' and 'notes'
+type Appointment = BaseAppointment & {
+  diagnosis?: string;
+  notes?: string;
+};
+
 import { useAuth } from "@/lib/hooks/use-auth";
 import {
   updateAppointment,
@@ -81,6 +88,10 @@ export function AppointmentDetails({
       MISSED: {
         label: "No Asistió",
         className: "bg-gray-100 text-gray-800 hover:bg-gray-200",
+      },
+      RESCHEDULED: {
+        label: "Reprogramada",
+        className: "bg-purple-100 text-purple-800 hover:bg-purple-200",
       },
     };
 
@@ -161,7 +172,7 @@ export function AppointmentDetails({
     if (!appointment?.id) return;
 
     const medicationToAdd: Omit<Medication, "id"> = {
-      patientId: appointment.patientId,
+      patientId: appointment.patientId || "",
       appointmentId: appointment.id,
       name: newMedication.name || "",
       dosage: newMedication.dosage || "",
@@ -209,14 +220,12 @@ export function AppointmentDetails({
 
     fetchMedications();
   }, [isOpen, appointment]);
-
-  // Reset appointment data when dialog opens/closes
   useEffect(() => {
     if (isOpen && appointment) {
       setAppointmentData({
         status: appointment.status,
-        notes: appointment.notes || "",
-        diagnosis: appointment.diagnosis || "",
+        ...(appointment.diagnosis !== undefined && { diagnosis: appointment.diagnosis || "" }),
+        ...(appointment.notes !== undefined && { notes: appointment.notes || "" }),
       });
     }
   }, [isOpen, appointment]);

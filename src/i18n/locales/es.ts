@@ -1,3 +1,4 @@
+
 export default {
   // Textos comunes
   common: {
@@ -17,6 +18,11 @@ export default {
     back: "Volver",
     next: "Siguiente",
     submit: "Enviar",
+    today: "Hoy",
+    select: "Seleccionar",
+    selectAll: "Seleccionar Todo",
+    deselectAll: "Deseleccionar Todo",
+    clear: "Limpiar",
   },
 
   // Autenticación
@@ -325,5 +331,26 @@ export default {
     weekendDateError: "No se pueden seleccionar fechas en fin de semana",
     timeSlotUnavailable: "Este horario no está disponible",
     appointmentOverlap: "Ya tienes una cita programada en este horario",
+  },
+  calendar: {
+    today: "Hoy",
+    month: "Mes",
+    week: "Semana",
+    day: "Día",
+    agenda: "Agenda",
+    allDay: "Todo el día",
+    noEvents: "No hay eventos programados",
+    eventDetails: "Detalles del evento",
+    eventTitle: "Título del evento",
+    eventDescription: "Descripción del evento",
+  },
+  work_days: {
+    monday: "Lunes",
+    tuesday: "Martes",
+    wednesday: "Miércoles",
+    thursday: "Jueves",
+    friday: "Viernes",
+    saturday: "Sábado",
+    sunday: "Domingo",
   },
 };

@@ -4,7 +4,9 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/hooks/use-auth";
-import { UserRole } from "@/lib/types";
+// import { UserRole } from "@/lib/types";
+// TODO: Replace the following import with the correct path where UserRole is defined
+type UserRole = "admin" | "user" | "doctor"; // Example roles, adjust as needed
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -25,7 +27,10 @@ export function ProtectedRoute({
         router.push("/login");
       }
       // If authenticated but role is not allowed
-      else if (allowedRoles && !allowedRoles.includes(user.role)) {
+      else if (
+        allowedRoles &&
+        (!user.role || !allowedRoles.includes(user.role as UserRole))
+      ) {
         router.push("/dashboard"); // Redirect to dashboard
       }
     }
@@ -41,7 +46,11 @@ export function ProtectedRoute({
   }
 
   // If user is authenticated and role is allowed, show children
-  if (!loading && user && (!allowedRoles || allowedRoles.includes(user.role))) {
+  if (
+    !loading &&
+    user &&
+    (!allowedRoles || allowedRoles.includes(user.role as UserRole))
+  ) {
     return <>{children}</>;
   }
 
