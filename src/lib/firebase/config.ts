@@ -1,17 +1,6 @@
-// src/lib/firebase/config.ts
 import { initializeApp, getApps, getApp } from "firebase/app";
-import {
-  getAuth,
-  Auth,
-  GoogleAuthProvider,
-  browserLocalPersistence,
-  browserSessionPersistence,
-} from "firebase/auth";
-import {
-  getFirestore,
-  Firestore,
-  enableIndexedDbPersistence,
-} from "firebase/firestore";
+import { getAuth, connectAuthEmulator } from "firebase/auth";
+import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -22,37 +11,39 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Si ya hay apps inicializadas, usa esa. Si no, inicializa una nueva.
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+// Singleton pattern para la app de Firebase
+const firebaseApp =
+  getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
-export const auth: Auth = getAuth(app);
-export const db: Firestore = getFirestore(app);
-export const googleProvider = new GoogleAuthProvider();
+// Inicialización única de Firestore
+export const db = (() => {
+  try {
+    return getFirestore(firebaseApp);
+  } catch (error) {
+    console.error("Error initializing Firestore:", error);
+    throw error;
+  }
+})();
 
-// Configurar el proveedor de Google
-googleProvider.setCustomParameters({
-  prompt: "select_account",
-});
+// Inicialización única de Auth
+export const auth = (() => {
+  const authInstance = getAuth(firebaseApp);
+  if (process.env.NODE_ENV === "development") {
+    connectAuthEmulator(authInstance, "http://localhost:9099");
+  }
+  return authInstance;
+})();
 
-// Configurar persistencia
-if (typeof window !== "undefined") {
-  auth.setPersistence(browserLocalPersistence).catch((error) => {
-    console.error("Error setting persistence:", error);
-  });
-
-  // Habilitar persistencia offline para Firestore
-  enableIndexedDbPersistence(db).catch((error) => {
-    if (error.code === "failed-precondition") {
-      console.warn(
-        "Multiple tabs open, persistence can only be enabled in one tab at a time."
-      );
-    } else if (error.code === "unimplemented") {
-      console.warn("Browser doesn't support IndexedDB.");
-    }
-  });
+// Configuración de emuladores solo en desarrollo
+if (process.env.NODE_ENV === "development") {
+  try {
+    connectFirestoreEmulator(db, "localhost", 8080);
+    console.log("Firestore emulator connected");
+  } catch (error) {
+    console.log("Firestore emulator already connected");
+  }
 }
 
-export type FirebaseServices = {
-  auth: Auth;
-  db: Firestore;
+export const initFirebase = () => {
+  // Función vacía solo para forzar la carga del módulo
 };

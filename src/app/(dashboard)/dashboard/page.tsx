@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/hooks/use-auth";
+import { useRouter } from "next/navigation";
 import {
-  getUserProfile,
   getDoctorProfile,
   getPatientProfile,
   getDoctorAppointments,
@@ -29,12 +29,11 @@ import {
 import Link from "next/link";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-
 import { Appointment } from "@/lib/types";
 
 interface Profile {
   displayName: string;
-  // otras propiedades del perfil...
+  role?: string;
 }
 
 interface Stats {
@@ -60,8 +59,17 @@ const statusBadgeLabels: Record<string, string> = {
   MISSED: "No asistió",
 };
 
+interface UserWithRole {
+  uid: string;
+  email: string | null;
+  emailVerified: boolean;
+  displayName: string | null;
+  role?: string;
+}
+
 export default function DashboardPage() {
-  const { user } = useAuth();
+  const { user } = useAuth() as { user: UserWithRole | null };
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -73,46 +81,64 @@ export default function DashboardPage() {
   });
 
   useEffect(() => {
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+
+    const abortController = new AbortController();
+
     const fetchData = async () => {
-      if (!user) return;
-
       try {
+        setLoading(true);
+
         if (user.role === "DOCTOR") {
-          const doctorProfile = await getDoctorProfile(user.uid);
-          setProfile({
-            ...doctorProfile,
-            displayName: doctorProfile?.displayName || "Nombre no disponible",
-          });
+          const [doctorProfile, doctorAppointments] = await Promise.all([
+            getDoctorProfile(user.uid),
+            getDoctorAppointments(user.uid),
+          ]);
 
-          const doctorAppointments = await getDoctorAppointments(user.uid);
-          setAppointments(doctorAppointments);
-          calculateStats(doctorAppointments);
+          if (!abortController.signal.aborted) {
+            setProfile({
+              displayName: doctorProfile?.displayName || "Nombre no disponible",
+              role: "DOCTOR",
+            });
+            setAppointments(doctorAppointments);
+            calculateStats(doctorAppointments);
+          }
         } else if (user.role === "PATIENT") {
-          const patientProfile = await getPatientProfile(user.uid);
-          setProfile({
-            ...patientProfile,
-            displayName: patientProfile?.displayName || "Nombre no disponible",
-          });
+          const [patientProfile, patientAppointments] = await Promise.all([
+            getPatientProfile(user.uid),
+            getPatientAppointments(user.uid),
+          ]);
 
-          const patientAppointments = await getPatientAppointments(user.uid);
-          setAppointments(patientAppointments);
-          calculateStats(patientAppointments);
-        } else {
-          const adminProfile = await getUserProfile(user.uid);
-          setProfile({
-            ...adminProfile,
-            displayName: adminProfile?.displayName || "Nombre no disponible",
-          });
+          if (!abortController.signal.aborted) {
+            setProfile({
+              displayName:
+                patientProfile?.displayName || "Nombre no disponible",
+              role: "PATIENT",
+            });
+            setAppointments(patientAppointments);
+            calculateStats(patientAppointments);
+          }
         }
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
+        if (!abortController.signal.aborted) {
+          setAppointments([]);
+          setStats({ upcoming: 0, completed: 0, cancelled: 0, total: 0 });
+        }
       } finally {
-        setLoading(false);
+        if (!abortController.signal.aborted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchData();
-  }, [user]);
+
+    return () => abortController.abort();
+  }, [user, router]);
 
   const calculateStats = (appointmentsData: Appointment[]) => {
     const upcoming = appointmentsData.filter(
@@ -136,15 +162,12 @@ export default function DashboardPage() {
   };
 
   const getStatusBadge = (status: string) => {
-    const style =
-      statusBadgeStyles[status] ||
-      "bg-gray-100 text-gray-800 hover:bg-gray-200";
+    const style = statusBadgeStyles[status] || "bg-gray-100 text-gray-800";
     const label = statusBadgeLabels[status] || status;
-
-    return <Badge className={style}>{label}</Badge>;
+    return <Badge className={`${style} transition-colors`}>{label}</Badge>;
   };
 
-  if (loading) {
+  if (!user || loading) {
     return (
       <div className="flex h-[calc(100vh-100px)] items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
@@ -153,31 +176,33 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4 md:p-6">
+      {/* Encabezado */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold">
-            Bienvenido, {profile?.displayName}
+          <h1 className="text-2xl font-bold tracking-tight">
+            Bienvenido, {profile?.displayName || "Usuario"}
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             {format(new Date(), "EEEE d 'de' MMMM 'de' yyyy", { locale: es })}
           </p>
         </div>
 
-        <Button asChild>
-          <Link href="/dashboard/calendar">
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Nueva Cita
-          </Link>
-        </Button>
+        {user.role !== "ADMIN" && (
+          <Button asChild className="shrink-0">
+            <Link href="/dashboard/calendar">
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Nueva Cita
+            </Link>
+          </Button>
+        )}
       </div>
 
+      {/* Estadísticas */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total de Citas
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">Total Citas</CardTitle>
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -188,24 +213,20 @@ export default function DashboardPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">
-              Próximas Citas
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">Próximas</CardTitle>
             <CalendarDays className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.upcoming}</div>
             <p className="text-xs text-muted-foreground">
-              Pendientes y confirmadas
+              Pendientes/Confirmadas
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">
-              Citas Completadas
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">Completadas</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -218,25 +239,26 @@ export default function DashboardPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">
-              Citas Canceladas
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">Canceladas</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.cancelled}</div>
             <p className="text-xs text-muted-foreground">
-              Canceladas o no asistidas
+              Canceladas/No asistidas
             </p>
           </CardContent>
         </Card>
       </div>
 
+      {/* Listado de Citas */}
       <Card>
         <CardHeader>
           <CardTitle>Citas Recientes</CardTitle>
           <CardDescription>
-            Tus últimas {Math.min(5, appointments.length)} citas médicas
+            {appointments.length > 0
+              ? `Tus últimas ${Math.min(5, appointments.length)} citas`
+              : "No hay citas programadas"}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -245,42 +267,42 @@ export default function DashboardPage() {
               {appointments.slice(0, 5).map((appointment) => (
                 <div
                   key={appointment.id}
-                  className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b pb-4"
+                  className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b pb-4 last:border-b-0"
                 >
-                  <div className="space-y-1">
+                  <div className="space-y-1 flex-1">
                     <div className="flex items-center gap-2">
                       <h3 className="font-medium">
-                        {user?.role === "DOCTOR"
+                        {user.role === "DOCTOR"
                           ? `Paciente: ${
-                              appointment.patientName || appointment.patientId || "Nombre no disponible"
+                              appointment.patientName || "Sin nombre"
                             }`
-                          : `Dr. ${
-                              appointment.doctorId || "ID no disponible"
-                            }`}
+                          : `Dr. ${appointment.doctorName || "Sin nombre"}`}
                       </h3>
                       {getStatusBadge(appointment.status)}
                     </div>
                     <p className="text-sm text-muted-foreground">
                       {format(appointment.date, "EEEE d 'de' MMMM 'de' yyyy", {
                         locale: es,
-                      })}{" "}
-                      • {appointment.time || "Hora no disponible"}
+                      })}
+                      {appointment.time && ` • ${appointment.time}`}
                     </p>
-                    <p className="text-sm">
-                      {appointment.reason.substring(0, 100)}
-                      {appointment.reason.length > 100 ? "..." : ""}
-                    </p>
+                    {appointment.reason && (
+                      <p className="text-sm line-clamp-2">
+                        {appointment.reason}
+                      </p>
+                    )}
                   </div>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="mt-2 sm:mt-0"
+                    className="mt-2 sm:mt-0 sm:ml-4"
                     asChild
                   >
                     <Link
-                      href={`/dashboard/calendar?appointmentId=${appointment.id}`}
+                      href={`/dashboard/appointments/${appointment.id}`}
+                      className="whitespace-nowrap"
                     >
-                      Ver Detalles
+                      Detalles
                       <ChevronRight className="ml-1 h-4 w-4" />
                     </Link>
                   </Button>
@@ -288,14 +310,18 @@ export default function DashboardPage() {
               ))}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <CalendarDays className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium">No hay citas registradas</h3>
-              <p className="text-muted-foreground mt-1">
-                Programa tu primera cita médica para comenzar
-              </p>
-              <Button className="mt-4" asChild>
-                <Link href="/dashboard/calendar">
+            <div className="flex flex-col items-center justify-center py-12 space-y-4">
+              <CalendarDays className="h-12 w-12 text-muted-foreground" />
+              <div className="text-center">
+                <h3 className="text-lg font-medium">
+                  No hay citas registradas
+                </h3>
+                <p className="text-muted-foreground text-sm mt-1">
+                  Programa tu primera cita para comenzar
+                </p>
+              </div>
+              <Button asChild>
+                <Link href="/dashboard/calendar" className="mt-4">
                   <PlusCircle className="mr-2 h-4 w-4" />
                   Agendar Cita
                 </Link>

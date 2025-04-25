@@ -38,13 +38,25 @@ const formSchema = z.object({
 
 export default function LoginPage() {
   const router = useRouter();
-  const { signIn, signInWithGoogleRedirect, user } = useAuth();
+  const {
+    signIn,
+    signInWithGoogleRedirect,
+    user,
+    error: authError,
+  } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
   const [mounted, setMounted] = useState(false);
 
-  // Prevenir error de hidratación con extensiones del navegador
+  // Mostrar errores del hook de autenticación
+  useEffect(() => {
+    if (authError) {
+      setError(authError);
+    }
+  }, [authError]);
+
+  // Prevenir error de hidratación
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -69,18 +81,23 @@ export default function LoginPage() {
     setError("");
 
     try {
-      // Validar que el email y la contraseña no estén vacíos
+      // Validaciones adicionales
       if (!values.email || !values.password) {
         setError("Por favor completa todos los campos.");
+        setIsLoading(false);
         return;
       }
 
+      // Intentar inicio de sesión
+      console.log("Iniciando sesión con:", values.email);
       await signIn(values.email, values.password);
+
+      // Redirigir al dashboard en caso de éxito
       router.push("/dashboard");
     } catch (err: any) {
-      console.error("Error en login:", err);
+      console.error("Error detallado en login:", err);
 
-      // Mostrar el mensaje de error personalizado del hook
+      // Error personalizado basado en el código de error
       if (err.code === "auth/invalid-credential") {
         setError(
           "Correo o contraseña incorrectos. Por favor, verifica tus credenciales."
@@ -104,14 +121,14 @@ export default function LoginPage() {
     setError("");
 
     try {
-      // Usar redirección en lugar de popup
       await signInWithGoogleRedirect();
-      // El usuario será redirigido a Google y luego de vuelta a la app
+      // El usuario será redirigido a Google
     } catch (err: any) {
       console.error("Error en login con Google:", err);
       setError(
         "Error al iniciar sesión con Google. Por favor, intenta nuevamente."
       );
+    } finally {
       setGoogleLoading(false);
     }
   };
@@ -281,9 +298,11 @@ export default function LoginPage() {
               )}
             </Button>
 
-            <p className="text-xs text-center text-gray-500 mt-4">
-              Si tienes problemas con el inicio de sesión, asegúrate de permitir
-              cookies de terceros en tu navegador.
+            <p className="text-center text-sm text-gray-500 mt-4">
+              ¿No tienes una cuenta?{" "}
+              <Link href="/register" className="text-primary hover:underline">
+                Regístrate aquí
+              </Link>
             </p>
           </CardContent>
         </Card>
