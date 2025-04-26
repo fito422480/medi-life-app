@@ -38,13 +38,13 @@ export function ThemeToggle() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={() => setTheme("light")}>
-          {t('common.light')}
+          {t('common.light', { count: 0 })}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => setTheme("dark")}>
-          {t('common.dark')}
+          {t('common.dark', { count: 0 })}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => setTheme("system")}>
-          {t('common.system')}
+          {t('common.system', { count: 0 })}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

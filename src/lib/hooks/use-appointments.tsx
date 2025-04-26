@@ -37,6 +37,9 @@ export function useAppointments(props?: UseAppointmentsProps) {
       setError(null);
 
       try {
+        function toDateSafe(date: Date | { toDate: () => Date }): Date {
+          return date instanceof Date ? date : date.toDate();
+        }
         let fetchedAppointments: Appointment[] = [];
 
         // If specific doctorId is provided, fetch appointments for that doctor
@@ -64,7 +67,7 @@ export function useAppointments(props?: UseAppointmentsProps) {
 
         // Sort appointments by date (most recent first)
         fetchedAppointments.sort((a, b) => {
-          return new Date(b.date).getTime() - new Date(a.date).getTime();
+          return toDateSafe(b.date).getTime() - toDateSafe(a.date).getTime();
         });
 
         setAppointments(fetchedAppointments);

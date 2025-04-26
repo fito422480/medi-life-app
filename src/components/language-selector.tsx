@@ -21,9 +21,9 @@ export function LanguageSelector() {
   const [mounted, setMounted] = useState(false);
 
   // Get current locale from URL params or use default
-  const currentLocale = params.locale && supportedLocales.includes(params.locale as any) 
-    ? params.locale 
-    : defaultLocale;
+const currentLocale = params.locale && (supportedLocales as readonly string[]).includes(params.locale) 
+? params.locale 
+: defaultLocale;
 
   // Avoid flickering during hydration
   useEffect(() => {

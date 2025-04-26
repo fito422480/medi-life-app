@@ -59,12 +59,17 @@ function Calendar({
         day_hidden: "invisible",
         ...classNames,
       }}
+      
       components={{
-        IconLeft: ({ className, ...props }) => (
-          <ChevronLeft className={cn("size-4", className)} {...props} />
+        PreviousMonthButton: ({ className, ...props }: React.ComponentProps<"button">) => (
+          <button type="button" className={className} {...props}>
+            <ChevronLeft className="size-4" />
+          </button>
         ),
-        IconRight: ({ className, ...props }) => (
-          <ChevronRight className={cn("size-4", className)} {...props} />
+        NextMonthButton: ({ className, ...props }: React.ComponentProps<"button">) => (
+          <button type="button" className={className} {...props}>
+            <ChevronRight className="size-4" />
+          </button>
         ),
       }}
       {...props}

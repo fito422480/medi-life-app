@@ -12,7 +12,7 @@ import {
   addDoc,
   serverTimestamp,
   Timestamp,
-  enablePersistence,
+  enableIndexedDbPersistence,
   onSnapshot,
   QuerySnapshot,
   DocumentSnapshot,
@@ -40,30 +40,24 @@ interface PendingOperation {
 // Activar la persistencia multi-tab con tamaño de caché ilimitado
 const initializeOfflineSupport = async () => {
   try {
-    // Configuración de persistencia
-    const persistenceSettings: PersistenceSettings = {
-      synchronizeTabs: true,
-      cacheSizeBytes: CACHE_SIZE_UNLIMITED,
-    };
-
     await enableMultiTabIndexedDbPersistence(db);
     console.log("Firestore persistence enabled successfully");
     return true;
   } catch (error) {
     if ((error as any)?.code === "failed-precondition") {
-      // Múltiples pestañas abiertas, persistencia habilitada solo en la primera
+      // Multiple tabs open, fallback to single-tab persistence
       console.warn(
         "Firestore persistence failed (multiple tabs open). Data will be cached for offline use only in this tab."
       );
       try {
-        await enablePersistence(db, { synchronizeTabs: false });
+        await enableIndexedDbPersistence(db);
         return true;
       } catch (err) {
         console.error("Failed to enable even single-tab persistence:", err);
         return false;
       }
     } else if ((error as any)?.code === "unimplemented") {
-      // El navegador no soporta IndexedDB
+      // Browser does not support IndexedDB
       console.error(
         "Offline persistence not supported in this browser. The app will not work offline."
       );

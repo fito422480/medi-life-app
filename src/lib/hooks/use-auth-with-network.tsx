@@ -1,37 +1,14 @@
-import { useState, useEffect } from 'react';
+"use client";
 
-const useAuthWithNetwork = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [networkStatus, setNetworkStatus] = useState('offline');
+import React, { createContext, useContext, ReactNode } from 'react';
+import { AuthProviderEnhanced } from './use-auth-enhanced';
+import { useNetworkStatus } from './use-network-status';
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      // Simulate authentication check
-      const authStatus = await new Promise((resolve) =>
-        setTimeout(() => resolve(true), 1000)
-      );
-      setIsAuthenticated(authStatus);
-    };
-
-    const updateNetworkStatus = () => {
-      // Simulate network status check
-      const status = navigator.onLine ? 'online' : 'offline';
-      setNetworkStatus(status);
-    };
-
-    checkAuth();
-    updateNetworkStatus();
-
-    window.addEventListener('online', updateNetworkStatus);
-    window.addEventListener('offline', updateNetworkStatus);
-
-    return () => {
-      window.removeEventListener('online', updateNetworkStatus);
-      window.removeEventListener('offline', updateNetworkStatus);
-    };
-  }, []);
-
-  return { isAuthenticated, networkStatus };
-};
-
-export default useAuthWithNetwork;
+// Combined provider for auth and network status
+export default function AuthProviderWithNetwork({ children }: { children: ReactNode }) {
+  return (
+    <AuthProviderEnhanced>
+      {children}
+    </AuthProviderEnhanced>
+  );
+}

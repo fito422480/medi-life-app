@@ -1,11 +1,10 @@
 "use client";
-
+import { NetworkStatusIndicator } from "@/components/network-status-indicator";
+import { PendingOperationsHandler } from '../pending-operations-handler';
 import React, { useEffect } from "react";
 import AuthProviderWithNetwork from "@/lib/hooks/use-auth-with-network";
 import { Toaster } from "@/components/ui/sonner";
 import { initFirebase } from "@/lib/firebase/config";
-import { NetworkStatusIndicator } from "@/components/network-status-indicator";
-import { PendingOperationsHandler } from "@/components/pending-operations-handler";
 import enhancedFirestoreService from "@/lib/firebase/enhanced-service";
 import {
   useNetworkStatus,
