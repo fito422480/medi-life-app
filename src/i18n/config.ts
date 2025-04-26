@@ -426,3 +426,6 @@ export const {
 
 // Lista de locales soportados
 export const supportedLocales = ["es", "en"] as const;
+
+// Default locale
+export const defaultLocale = "es";

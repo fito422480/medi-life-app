@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname, useParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Globe } from "lucide-react";
 import { useTheme } from "next-themes";
@@ -11,16 +11,21 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { getCurrentLocale, supportedLocales } from "@/i18n/config";
+import { supportedLocales, defaultLocale } from "@/i18n/config";
 
 export function LanguageSelector() {
   const router = useRouter();
   const pathname = usePathname();
+  const params = useParams<{ locale?: string }>();
   const { theme } = useTheme();
-  const currentLocale = getCurrentLocale();
   const [mounted, setMounted] = useState(false);
 
-  // Evitar parpadeo durante la hidratación
+  // Get current locale from URL params or use default
+  const currentLocale = params.locale && supportedLocales.includes(params.locale as any) 
+    ? params.locale 
+    : defaultLocale;
+
+  // Avoid flickering during hydration
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -30,17 +35,17 @@ export function LanguageSelector() {
   }
 
   const changeLanguage = (locale: string) => {
-    // Reemplazar el locale en la ruta actual
+    // Replace the locale in the current path
     let newPath = pathname;
 
-    // Si la ruta ya tiene un locale configurado
+    // If the path already has a locale configured
     if (supportedLocales.some((loc) => pathname.startsWith(`/${loc}`))) {
       newPath = pathname.replace(/^\/[^\/]+/, `/${locale}`);
     } else {
       newPath = `/${locale}${pathname}`;
     }
 
-    // Navegar a la nueva ruta
+    // Navigate to the new path
     router.push(newPath);
   };
 
