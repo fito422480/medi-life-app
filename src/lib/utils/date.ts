@@ -1,5 +1,5 @@
 import { Timestamp } from "firebase/firestore";
-import { format } from "date-fns";
+import { format, differenceInYears } from "date-fns";
 import { Locale } from "date-fns";
 
 export const safeConvertToDate = (
@@ -18,4 +18,10 @@ export const formatDate = (
 ): string => {
   const safeDate = safeConvertToDate(date);
   return safeDate ? format(safeDate, formatStr, { locale }) : "N/A";
+};
+
+export const calculateAge = (birthDate: Date | string | Timestamp | null | undefined): number => {
+  const safeDate = safeConvertToDate(birthDate);
+  if (!safeDate) return 0;
+  return differenceInYears(new Date(), safeDate);
 };

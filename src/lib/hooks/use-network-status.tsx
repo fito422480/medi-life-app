@@ -7,8 +7,7 @@ import {
   enableNetwork,
   disableNetwork,
 } from "firebase/firestore";
-import { getDatabase, onDisconnect, onValue, ref } from "firebase/database";
-
+import { getDatabase, onValue, ref } from "firebase/database";
 export enum NetworkStatus {
   ONLINE = "online",
   OFFLINE = "offline",
@@ -75,7 +74,7 @@ export function useNetworkStatus(): UseNetworkStatusReturn {
     return () => {
       window.removeEventListener("online", handleOnline);
       unsubscribeConnection();
-      unsubscribeConnect();
+      window.removeEventListener("offline", handleOffline);
     };
   }, []);
 

@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { z } from "zod";
 import Link from "next/link";
 import { useAuth } from "@/lib/hooks/use-auth";
+import { FirebaseError } from "firebase/app";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -46,29 +47,15 @@ export default function LoginPage() {
   } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
 
-  // Mostrar errores del hook de autenticación
-  useEffect(() => {
-    if (authError) {
-      setError(authError);
-    }
-  }, [authError]);
-
-  // Prevenir error de hidratación
   useEffect(() => {
     setMounted(true);
+    return () => setMounted(false);
   }, []);
 
-  // Redirigir si el usuario ya está autenticado
-  useEffect(() => {
-    if (user) {
-      router.push("/dashboard");
-    }
-  }, [user, router]);
-
-  const form = useForm({
+  const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       email: "",
@@ -76,76 +63,34 @@ export default function LoginPage() {
     },
   });
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    setIsLoading(true);
-    setError("");
-
+  const onSubmit = async (data: z.infer<typeof formSchema>) => {
     try {
-      // Validaciones adicionales
-      if (!values.email || !values.password) {
-        setError("Por favor completa todos los campos.");
-        setIsLoading(false);
-        return;
-      }
-
-      // Intentar inicio de sesión
-      console.log("Iniciando sesión con:", values.email);
-      await signIn(values.email, values.password);
-
-      // Redirigir al dashboard en caso de éxito
+      setError(null);
+      setIsLoading(true);
+      await signIn(data.email, data.password);
       router.push("/dashboard");
-    } catch (err: any) {
-      console.error("Error detallado en login:", err);
-
-      // Error personalizado basado en el código de error
-      if (err.code === "auth/invalid-credential") {
-        setError(
-          "Correo o contraseña incorrectos. Por favor, verifica tus credenciales."
-        );
-      } else if (err.code === "auth/user-not-found") {
-        setError("No existe una cuenta con este correo electrónico.");
-      } else if (err.code === "auth/wrong-password") {
-        setError("La contraseña es incorrecta.");
-      } else if (err.code === "auth/too-many-requests") {
-        setError("Demasiados intentos fallidos. Por favor, intenta más tarde.");
-      } else {
-        setError("Error al iniciar sesión. Por favor, intenta nuevamente.");
-      }
+    } catch (err) {
+      const error = err as FirebaseError;
+      setError(error.message || "Error al iniciar sesión");
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleGoogleSignIn = async () => {
-    setGoogleLoading(true);
-    setError("");
-
     try {
+      setError(null);
+      setGoogleLoading(true);
       await signInWithGoogleRedirect();
-      // El usuario será redirigido a Google
-    } catch (err: any) {
-      console.error("Error en login con Google:", err);
-      setError(
-        "Error al iniciar sesión con Google. Por favor, intenta nuevamente."
-      );
+    } catch (err) {
+      const error = err as FirebaseError;
+      setError(error.message || "Error al iniciar sesión con Google");
     } finally {
       setGoogleLoading(false);
     }
   };
 
-  // Renderizar un placeholder mientras se monta el componente
-  if (!mounted) {
-    return (
-      <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-gray-400 to-indigo-100">
-        <div className="w-full max-w-md px-6 py-8 bg-white shadow-lg rounded-3xl">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-3/4 mx-auto mb-4"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto mb-8"></div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  if (!mounted) return null;
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-gray-400 to-indigo-100">
@@ -168,10 +113,7 @@ export default function LoginPage() {
             )}
 
             <Form {...form}>
-              <form
-                onSubmit={form.handleSubmit(onSubmit)}
-                className="space-y-6"
-              >
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <FormField
                   control={form.control}
                   name="email"
@@ -190,6 +132,7 @@ export default function LoginPage() {
                             spellCheck="false"
                             data-lpignore="true"
                             {...field}
+                            disabled={isLoading}
                           />
                         </div>
                       </FormControl>
@@ -224,6 +167,7 @@ export default function LoginPage() {
                             autoComplete="current-password"
                             data-lpignore="true"
                             {...field}
+                            disabled={isLoading}
                           />
                         </div>
                       </FormControl>

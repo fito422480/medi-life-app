@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect } from "react";
-import { AuthProviderWithNetwork } from "@/lib/hooks/use-auth-with-network";
+import AuthProviderWithNetwork from "@/lib/hooks/use-auth-with-network";
 import { Toaster } from "@/components/ui/sonner";
 import { initFirebase } from "@/lib/firebase/config";
 import { NetworkStatusIndicator } from "@/components/network-status-indicator";

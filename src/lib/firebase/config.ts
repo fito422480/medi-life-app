@@ -15,34 +15,45 @@ const firebaseConfig = {
 const firebaseApp =
   getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
-// Inicialización única de Firestore
-export const db = (() => {
-  try {
-    return getFirestore(firebaseApp);
-  } catch (error) {
-    console.error("Error initializing Firestore:", error);
-    throw error;
-  }
-})();
+// Configuración de emuladores desde variables de entorno
+const emulatorHost = process.env.NEXT_PUBLIC_FIREBASE_EMULATOR_HOST || "localhost";
+const emulatorPorts = {
+  auth: parseInt(process.env.NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_PORT || "9099", 10),
+  firestore: parseInt(process.env.NEXT_PUBLIC_FIREBASE_FIRESTORE_EMULATOR_PORT || "8080", 10),
+};
 
 // Inicialización única de Auth
 export const auth = (() => {
   const authInstance = getAuth(firebaseApp);
   if (process.env.NODE_ENV === "development") {
-    connectAuthEmulator(authInstance, "http://localhost:9099");
+    try {
+      connectAuthEmulator(authInstance, `http://${emulatorHost}:${emulatorPorts.auth}`);
+      console.log("Auth emulator connected");
+    } catch (error) {
+      console.warn("Error connecting auth emulator:", error);
+    }
   }
   return authInstance;
 })();
 
-// Configuración de emuladores solo en desarrollo
-if (process.env.NODE_ENV === "development") {
+// Inicialización única de Firestore
+export const db = (() => {
   try {
-    connectFirestoreEmulator(db, "localhost", 8080);
-    console.log("Firestore emulator connected");
+    const firestoreInstance = getFirestore(firebaseApp);
+    if (process.env.NODE_ENV === "development") {
+      try {
+        connectFirestoreEmulator(firestoreInstance, emulatorHost, emulatorPorts.firestore);
+        console.log("Firestore emulator connected");
+      } catch (error) {
+        console.warn("Error connecting firestore emulator:", error);
+      }
+    }
+    return firestoreInstance;
   } catch (error) {
-    console.log("Firestore emulator already connected");
+    console.error("Error initializing Firestore:", error);
+    throw error;
   }
-}
+})();
 
 export const initFirebase = () => {
   // Función vacía solo para forzar la carga del módulo

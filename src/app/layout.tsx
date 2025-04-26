@@ -4,6 +4,8 @@ import "./globals.css";
 import { AuthProvider } from "@/lib/hooks/use-auth";
 import { Toaster } from "@/components/ui/sonner";
 import { initFirebase } from "@/lib/firebase/config";
+import { I18nProvider } from "@/i18n/config";
+import { es } from "date-fns/locale";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,10 +27,12 @@ const ClientLayout = ({ children }: { children: React.ReactNode }) => {
   initFirebase();
 
   return (
-    <AuthProvider>
-      {children}
-      <Toaster position="top-center" richColors />
-    </AuthProvider>
+    <I18nProvider locale={es}>
+      <AuthProvider>
+        {children}
+        <Toaster position="top-center" richColors />
+      </AuthProvider>
+    </I18nProvider>
   );
 };
 

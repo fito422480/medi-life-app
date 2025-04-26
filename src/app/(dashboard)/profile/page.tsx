@@ -11,7 +11,19 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 
-export function LanguageSelector() {
+export default function ProfilePage() {
+  return (
+    <div className="container mx-auto py-8">
+      <h1 className="text-2xl font-bold mb-4">Profile</h1>
+      <div className="space-y-4">
+        <LanguageSelector />
+        {/* Add your profile content here */}
+      </div>
+    </div>
+  );
+}
+
+function LanguageSelector() {
   const router = useRouter();
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
@@ -66,3 +78,4 @@ export function LanguageSelector() {
       </DropdownMenuContent>
     </DropdownMenu>
   );
+}

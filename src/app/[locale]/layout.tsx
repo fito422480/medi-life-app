@@ -70,31 +70,31 @@ export default function DashboardLayout({
   // Items de navegación
   const navigationItems = [
     {
-      name: t("dashboard.dashboard"),
+      name: t("dashboard.dashboard", { count: 1 }),
       href: "",
       icon: LayoutDashboard,
       roles: ["PATIENT", "DOCTOR", "ADMIN"] as UserRole[],
     },
     {
-      name: t("appointments.calendar"),
+      name: t("appointments.calendar", { count: 1 }),
       href: "/calendar",
       icon: CalendarDays,
       roles: ["PATIENT", "DOCTOR", "ADMIN"] as UserRole[],
     },
     {
-      name: t("patients.patients"),
+      name: t("patients.patients", { count: 1 }),
       href: "/patients",
       icon: Users,
       roles: ["DOCTOR", "ADMIN"] as UserRole[],
     },
     {
-      name: t("doctors.doctors"),
+      name: t("doctors.doctors", { count: 1 }),
       href: "/doctors",
       icon: UserRound,
       roles: ["PATIENT", "ADMIN"] as UserRole[],
     },
     {
-      name: t("profile.profile"),
+      name: t("profile.profile", { count: 1 }),
       href: "/profile",
       icon: Settings,
       roles: ["PATIENT", "DOCTOR", "ADMIN"] as UserRole[],
@@ -119,7 +119,7 @@ export default function DashboardLayout({
       <div className="flex h-screen w-full items-center justify-center">
         <div className="flex flex-col items-center gap-2">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
+          <p className="text-sm text-muted-foreground">{t("common.loading", { count: 1 })}</p>
         </div>
       </div>
     );
@@ -142,7 +142,7 @@ export default function DashboardLayout({
               <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary text-white">
                 M
               </div>
-              <span className="text-lg">{t("common.appName")}</span>
+              <span className="text-lg">{t("common.appName", { count: 1 })}</span>
             </Link>
           ) : (
             <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary text-white">
@@ -245,14 +245,14 @@ export default function DashboardLayout({
                     className="flex w-full items-center"
                   >
                     <Settings className="mr-2 h-4 w-4" />
-                    <span>{t("profile.profile")}</span>
+                    <span>{t("profile.profile", { count: 1 })}</span>
                   </Link>
                 </DropdownMenuItem>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut}>
                 <LogOut className="mr-2 h-4 w-4" />
-                <span>{t("auth.logout")}</span>
+                <span>{t("auth.logout", { count: 1 })}</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -270,7 +270,7 @@ export default function DashboardLayout({
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="md:hidden">
                 <Menu className="h-5 w-5" />
-                <span className="sr-only">{t("common.appName")}</span>
+                <span className="sr-only">{t("common.appName", { count: 1 })}</span>
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="sm:max-w-xs">
@@ -284,7 +284,7 @@ export default function DashboardLayout({
                     <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
                       M
                     </div>
-                    <span>{t("common.appName")}</span>
+                    <span>{t("common.appName", { count: 1 })}</span>
                   </Link>
                 </SheetTitle>
               </SheetHeader>
@@ -312,7 +312,7 @@ export default function DashboardLayout({
                 onClick={handleSignOut}
               >
                 <LogOut className="mr-2 h-4 w-4" />
-                <span>{t("auth.logout")}</span>
+                <span>{t("auth.logout", { count: 1 })}</span>
               </Button>
             </SheetContent>
           </Sheet>
@@ -321,7 +321,7 @@ export default function DashboardLayout({
           <div className="hidden w-full max-w-md md:flex">
             <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
-              <Input placeholder={t("common.search")} className="w-full pl-9" />
+              <Input placeholder={t("common.search", { count: 1 })} className="w-full pl-9" />
             </div>
           </div>
 
@@ -332,9 +332,7 @@ export default function DashboardLayout({
               <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
                 3
               </span>
-              <span className="sr-only">
-                {t("notifications.notifications")}
-              </span>
+              <span className="sr-only">{t("notifications.notifications", { count: 1 })}</span>
             </Button>
 
             <LanguageSelector />
@@ -375,13 +373,13 @@ export default function DashboardLayout({
                     className="flex w-full items-center"
                   >
                     <Settings className="mr-2 h-4 w-4" />
-                    <span>{t("profile.profile")}</span>
+                    <span>{t("profile.profile", { count: 1 })}</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut}>
                   <LogOut className="mr-2 h-4 w-4" />
-                  <span>{t("auth.logout")}</span>
+                  <span>{t("auth.logout", { count: 1 })}</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

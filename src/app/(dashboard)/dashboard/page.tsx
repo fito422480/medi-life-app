@@ -9,6 +9,7 @@ import {
   getDoctorAppointments,
   getPatientAppointments,
 } from "@/lib/firebase/db";
+import { Timestamp } from "firebase/firestore";
 import {
   Card,
   CardContent,
@@ -281,10 +282,14 @@ export default function DashboardPage() {
                       {getStatusBadge(appointment.status)}
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      {format(appointment.date, "EEEE d 'de' MMMM 'de' yyyy", {
-                        locale: es,
-                      })}
-                      {appointment.time && ` • ${appointment.time}`}
+                      {format(
+                        appointment.date instanceof Timestamp
+                          ? appointment.date.toDate()
+                          : appointment.date,
+                        "EEEE d 'de' MMMM 'de' yyyy",
+                        { locale: es }
+                      )}
+                      {appointment.startTime && ` • ${appointment.startTime}`}
                     </p>
                     {appointment.reason && (
                       <p className="text-sm line-clamp-2">

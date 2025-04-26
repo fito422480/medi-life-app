@@ -34,38 +34,14 @@ export type User = {
   updatedAt?: string | Date;
 };
 
-export type Doctor = User & {
-  role: "DOCTOR";
-  specialty: string;
-  licenseNumber: string;
-};
-
 export type Patient = User & {
   role: "PATIENT";
   bloodType?: string;
   allergies?: string[];
   medicalHistory?: string;
   emergencyContact?: EmergencyContact;
+  dateOfBirth?: Date | string;
 };
-
-export interface Appointment {
-  id: string;
-  date: Date | string;
-  time?: string; // <--- Agrega esta línea
-  status:
-    | "SCHEDULED"
-    | "CONFIRMED"
-    | "COMPLETED"
-    | "RESCHEDULED"
-    | "CANCELLED"
-    | "MISSED";
-  reason: string;
-  patientId?: string;
-  patientName?: string;
-  doctorId?: string;
-  doctorName?: string;
-  // ...otras propiedades...
-}
 
 export type AppointmentStatus =
   | "SCHEDULED"
@@ -86,3 +62,5 @@ export type Medication = {
   endDate?: Date;
   instructions?: string;
 };
+
+export * from './types';

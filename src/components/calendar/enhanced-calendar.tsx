@@ -175,7 +175,7 @@ export function EnhancedCalendar({
             onClick={() => onNavigate("TODAY")}
           >
             <CalendarIcon className="h-4 w-4 mr-1" />
-            {t("common.today")}
+            {t("common.today", {})}
           </Button>
           <div className="flex items-center">
             <Button
@@ -203,7 +203,7 @@ export function EnhancedCalendar({
               className="rounded-lg"
               onClick={() => onView(Views.MONTH)}
             >
-              {t("month")}
+              {t("month", {})}
             </Button>
             <Button
               variant={view === Views.WEEK ? "default" : "ghost"}
@@ -211,7 +211,7 @@ export function EnhancedCalendar({
               className="rounded-lg"
               onClick={() => onView(Views.WEEK)}
             >
-              {t("week")}
+              {t("week", {})}
             </Button>
             <Button
               variant={view === Views.DAY ? "default" : "ghost"}
@@ -219,7 +219,7 @@ export function EnhancedCalendar({
               className="rounded-lg"
               onClick={() => onView(Views.DAY)}
             >
-              {t("day")}
+              {t("day", {})}
             </Button>
             <Button
               variant={view === Views.AGENDA ? "default" : "ghost"}
@@ -227,12 +227,12 @@ export function EnhancedCalendar({
               className="rounded-lg"
               onClick={() => onView(Views.AGENDA)}
             >
-              {t("agenda")}
+              {t("agenda", {})}
             </Button>
           </div>
           <Button size="sm" className="hidden sm:flex">
             <Plus className="h-4 w-4 mr-1" />
-            {t("appointments.newAppointment")}
+            {t("appointments.newAppointment", {})}
           </Button>
         </div>
       </div>
@@ -339,7 +339,7 @@ export function EnhancedCalendar({
     return (
       <Card className={cn("w-full h-[600px]", className)}>
         <CardHeader>
-          <CardTitle>{t("appointments.calendar")}</CardTitle>
+          <CardTitle>{t("appointments.calendar", {})}</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           <div className="h-[500px] animate-pulse bg-muted rounded-md" />
@@ -352,14 +352,14 @@ export function EnhancedCalendar({
     return (
       <Card className={cn("w-full h-[600px]", className)}>
         <CardHeader>
-          <CardTitle>{t("appointments.calendar")}</CardTitle>
+          <CardTitle>{t("appointments.calendar", {})}</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           <div className="h-[500px] flex items-center justify-center">
             <div className="flex flex-col items-center gap-2">
               <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
               <p className="text-sm text-muted-foreground">
-                {t("common.loading")}
+                {t("common.loading", {})}
               </p>
             </div>
           </div>
@@ -371,7 +371,7 @@ export function EnhancedCalendar({
   return (
     <Card className={cn("w-full h-[600px]", className)}>
       <CardHeader className="pb-0">
-        <CardTitle>{t("appointments.calendar")}</CardTitle>
+        <CardTitle>{t("appointments.calendar", {})}</CardTitle>
       </CardHeader>
       <CardContent className="p-0 mt-2">
         <div className="h-[520px] px-4 pb-4">
@@ -431,7 +431,7 @@ export function EnhancedCalendar({
               time: "time",
               event: "event",
               noEventsInRange: "noEventsInRange",
-              showMore: (total: number) => `+ ${total} ${t("common.more")}`,
+              showMore: (total: number) => `+ ${total} ${t("common.more", {})}`,
             }}
           />
         </div>

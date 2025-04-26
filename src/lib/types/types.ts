@@ -1,4 +1,5 @@
 // src/lib/types.ts
+
 import { Timestamp } from "firebase/firestore";
 
 // ─────────────────────────────────────────────────────────────
@@ -14,7 +15,10 @@ export enum Specialty {
   DERMATOLOGY = "Dermatology",
   PEDIATRICS = "Pediatrics",
   NEUROLOGY = "Neurology",
-  // etc.
+  PSYCHIATRY = "Psychiatry",
+  PSYCHOLOGY = "Psychology",
+  GYNECOLOGY = "Gynecology",
+  ORTHOPEDICS = "Orthopedics",
 }
 
 // Tipo utilitario para fechas (puedes cambiar si lo necesitás más flexible)
@@ -64,16 +68,18 @@ export type AppointmentStatus =
   | "SCHEDULED"
   | "CONFIRMED"
   | "COMPLETED"
+  | "RESCHEDULED"
   | "CANCELLED"
   | "MISSED";
 
-export const appointmentStatusNames: Record<AppointmentStatus, string> = {
-  SCHEDULED: "Pendiente",
-  CONFIRMED: "Confirmada",
-  COMPLETED: "Completada",
-  CANCELLED: "Cancelada",
-  MISSED: "No asistió",
-};
+  export const appointmentStatusNames: Record<AppointmentStatus, string> = {
+    SCHEDULED: "Pendiente",
+    CONFIRMED: "Confirmada",
+    COMPLETED: "Completada",
+    CANCELLED: "Cancelada",
+    MISSED: "No asistió",
+    RESCHEDULED: "Reprogramada"
+  };
 
 export const appointmentStatusColors: Record<AppointmentStatus, string> = {
   SCHEDULED: "bg-yellow-100 text-yellow-800 hover:bg-yellow-200",
@@ -81,6 +87,7 @@ export const appointmentStatusColors: Record<AppointmentStatus, string> = {
   COMPLETED: "bg-blue-100 text-blue-800 hover:bg-blue-200",
   CANCELLED: "bg-red-100 text-red-800 hover:bg-red-200",
   MISSED: "bg-gray-100 text-gray-800 hover:bg-gray-200",
+  RESCHEDULED: "bg-orange-100 text-orange-800 hover:bg-orange-200"
 };
 
 export interface Appointment {

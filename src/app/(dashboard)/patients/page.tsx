@@ -22,15 +22,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { calculateAge } from "@/lib/utils/date";
+
 import {
   Search,
   CalendarPlus,
@@ -97,21 +99,6 @@ export default function PatientsPage() {
     // This would navigate to the patient's medical record page
     // For now, let's just navigate to the calendar with the patient selected
     router.push(`/dashboard/calendar?patientId=${patientId}`);
-  };
-
-  const calculateAge = (dateOfBirth?: Date | string) => {
-    if (!dateOfBirth) return "N/A";
-
-    const today = new Date();
-    const birthDate = new Date(dateOfBirth);
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const m = today.getMonth() - birthDate.getMonth();
-
-    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-
-    return age;
   };
 
   return (
@@ -268,17 +255,14 @@ export default function PatientsPage() {
                                 </span>
                                 <span className="text-xs text-muted-foreground block">
                                   {format(
-                                    typeof patient.dateOfBirth === "object" &&
-                                      "toDate" in patient.dateOfBirth
-                                      ? patient.dateOfBirth.toDate()
-                                      : new Date(patient.dateOfBirth),
-                                    "dd MMM yyyy",
+                                    typeof patient.dateOfBirth === "object" ? patient.dateOfBirth : new Date(patient.dateOfBirth),
+                                    "dd 'de' MMMM 'de' yyyy",
                                     { locale: es }
                                   )}
                                 </span>
                               </div>
                             ) : (
-                              "N/A"
+                              <span className="text-muted-foreground">Sin especificar</span>
                             )}
                           </TableCell>
                           <TableCell>

@@ -4,9 +4,9 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/hooks/use-auth";
-// import { UserRole } from "@/lib/types";
-// TODO: Replace the following import with the correct path where UserRole is defined
-type UserRole = "admin" | "user" | "doctor"; // Example roles, adjust as needed
+import { User } from "@/lib/types/user";
+
+type UserRole = User["role"];
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -27,10 +27,7 @@ export function ProtectedRoute({
         router.push("/login");
       }
       // If authenticated but role is not allowed
-      else if (
-        allowedRoles &&
-        (!user.role || !allowedRoles.includes(user.role as UserRole))
-      ) {
+      else if (allowedRoles && user?.role && !allowedRoles.includes(user.role)) {
         router.push("/dashboard"); // Redirect to dashboard
       }
     }
@@ -46,14 +43,19 @@ export function ProtectedRoute({
   }
 
   // If user is authenticated and role is allowed, show children
-  if (
-    !loading &&
-    user &&
-    (!allowedRoles || allowedRoles.includes(user.role as UserRole))
-  ) {
+  if (!loading && user && (!allowedRoles || allowedRoles.includes(user.role))) {
     return <>{children}</>;
   }
 
-  // For any other case, return null (redirect will happen through the useEffect)
-  return null;
+  // If user is authenticated but role is not allowed, show error message
+  return (
+    <div className="flex h-screen w-full items-center justify-center">
+      <div className="text-center">
+        <h2 className="text-xl font-semibold mb-4">Acceso no autorizado</h2>
+        <p className="text-muted-foreground">
+          No tienes permisos para acceder a esta página.
+        </p>
+      </div>
+    </div>
+  );
 }

@@ -1,7 +1,7 @@
 /* eslint-env node */
 /* eslint-disable @typescript-eslint/no-require-imports */
-const lighthouse = require("lighthouse");
-const chromeLauncher = require("chrome-launcher");
+const lighthouse = require('lighthouse/core/runner');
+const chromeLauncher = require('chrome-launcher');
 const { exec } = require("child_process");
 const fs = require("fs");
 const path = require("path");
@@ -19,6 +19,10 @@ async function runLighthouse() {
     output: "html",
     onlyCategories: ["performance"],
     port: chrome.port,
+    settings: {
+      onlyCategories: ["performance"],
+      output: "html"
+    }
   };
 
   try {

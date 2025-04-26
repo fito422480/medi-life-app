@@ -8,21 +8,26 @@ import {
   useCallback,
 } from "react";
 import {
-  User,
+  User as FirebaseUser,
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signOut,
+  GoogleAuthProvider,
+  signInWithPopup,
 } from "firebase/auth";
 import { auth, db } from "../firebase/config";
 import { doc, getDoc } from "firebase/firestore";
 import { checkFirestoreConnection } from "../firebase/network-check";
+import { User } from "@/lib/types/user";
 
 type AuthContextType = {
   user: User | null;
   loading: boolean;
-  error: string;
+  error: string | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>;
+  signInWithGoogleRedirect: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -30,7 +35,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   type FirebaseError = {
     code: string;
@@ -54,16 +59,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
     const errorCode = 'code' in error ? error.code : 'default';
     setError(
-      errorMessages[errorCode as keyof ErrorMessages] || errorMessages.default
+      errorMessages[errorCode as keyof typeof errorMessages] || errorMessages.default
     );
   }, []);
-
-  type ErrorMessages = {
-    "auth/network-request-failed": string;
-    "auth/user-not-found": string;
-    "auth/wrong-password": string;
-    default: string;
-  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -76,7 +74,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
           if (!userDoc.exists()) throw new Error("user-not-found");
 
-          setUser({ ...firebaseUser, ...userDoc.data() });
+          const userData = userDoc.data() as User;
+          setUser({ ...userData, uid: firebaseUser.uid });
         } else {
           setUser(null);
         }
@@ -110,8 +109,39 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const signIn = async (email: string, password: string) => {
+    try {
+      await checkFirestoreConnection();
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+      handleAuthError(error as ErrorType);
+      throw error;
+    }
+  };
+
+  const signInWithGoogleRedirect = async () => {
+    try {
+      await checkFirestoreConnection();
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+    } catch (error) {
+      handleAuthError(error as ErrorType);
+      throw error;
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, error, login, logout }}>
+    <AuthContext.Provider 
+      value={{ 
+        user, 
+        loading, 
+        error, 
+        login, 
+        logout, 
+        signIn, 
+        signInWithGoogleRedirect 
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

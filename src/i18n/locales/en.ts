@@ -1,4 +1,6 @@
-export default {
+import { Translations } from "../config";
+
+const translations: Translations =  {
   // Common texts
   common: {
     appName: "MediAgenda",
@@ -22,6 +24,7 @@ export default {
     selectAll: "Select All",
     deselectAll: "Deselect All",
     clear: "Clear",
+    patients: "Patients",
   },
 
   // Authentication
@@ -34,6 +37,7 @@ export default {
     dontHaveAccount: "Don't have an account?",
     createAccount: "Create an account",
     email: "Email",
+    username: "Username",
     password: "Password",
     confirmPassword: "Confirm Password",
     enterEmail: "Enter your email",
@@ -108,60 +112,93 @@ export default {
   // Doctors
   doctors: {
     doctors: "Doctors",
-    doctorDirectory: "Doctor Directory",
-    findDoctor: "Find a Doctor",
-    specialty: "Specialty",
-    experience: "Experience",
-    ratings: "Ratings",
-    reviews: "Reviews",
-    contactInfo: "Contact Information",
-    availability: "Availability",
-    bio: "Bio",
-    location: "Location",
-    education: "Education",
-    licenseNumber: "License Number",
-    viewProfile: "View Profile",
-    noDoctor: "No doctors available",
-    filterBySpecialty: "Filter by Specialty",
     allSpecialties: "All Specialties",
-    doctorProfile: "Doctor Profile",
+    specialties: {
+      all: "All Specialties",
+      allergist: "Allergist",
+      cardiologist: "Cardiologist",
+      dermatologist: "Dermatologist",
+      endocrinologist: "Endocrinologist",
+      gastroenterologist: "Gastroenterologist",
+      generalPractitioner: "General Practice",
+      gynecologist: "Gynecologist",
+      hematologist: "Hematologist",
+      nephrologist: "Nephrologist",
+      neurologist: "Neurologist",
+      oncologist: "Oncologist",
+      orthopedicSurgeon: "Orthopedic Surgeon",
+      pediatrician: "Pediatrician",
+      psychiatrist: "Psychiatrist",
+      psychologist: "Psychologist",
+      pulmonologist: "Pulmonologist",
+      radiologist: "Radiologist",
+      rheumatologist: "Rheumatologist",
+      urologist: "Urologist"
+    },
+    search: {
+      placeholder: "Search doctors...",
+      noDoctorsFound: "No doctors found",
+      loading: "Loading doctors..."
+    },
+    status: {
+      loading: "Loading doctors...",
+      noDoctorsFound: "No doctors found matching your criteria"
+    },
+    error: "Error loading doctors",
+    actions: {
+      tryAgain: "Try Again",
+      viewProfile: "View Profile",
+      scheduleAppointment: "Schedule Appointment"
+    },
+    ratings: {
+      noRating: "No rating yet",
+      reviews: "reviews"
+    },
+    availableHours: "Available hours",
+    noBio: "No biography available",
+    noAddress: "No address available",
+    filterBySpecialty: "Filter by specialty",
+    viewProfile: "View profile of",
+    scheduleAppointment: "Schedule appointment with"
   },
 
   // Patients
-  patients: {
-    patients: "Patients",
-    patientList: "Patient List",
-    patientDetails: "Patient Details",
-    medicalHistory: "Medical History",
-    allergies: "Allergies",
-    medications: "Medications",
-    conditions: "Medical Conditions",
-    demographic: "Demographic Information",
-    emergencyContact: "Emergency Contact",
-    addPatient: "Add Patient",
-    editPatient: "Edit Patient",
-    noPatients: "No patients registered",
-    patientInfo: "Patient Information",
-    dateOfBirth: "Date of Birth",
-    age: "Age",
-    gender: "Gender",
-    bloodType: "Blood Type",
-    height: "Height",
-    weight: "Weight",
-    lastVisit: "Last Visit",
-    upcomingVisit: "Upcoming Visit",
-  },
+  // patients: {
+  //   patients: "Patients",
+  //   patientList: "Patient List",
+  //   patientDetails: "Patient Details",
+  //   medicalHistory: "Medical History",
+  //   allergies: "Allergies",
+  //   medications: "Medications",
+  //   conditions: "Medical Conditions",
+  //   demographic: "Demographic Information",
+  //   emergencyContact: "Emergency Contact",
+  //   addPatient: "Add Patient",
+  //   editPatient: "Edit Patient",
+  //   noPatients: "No patients registered",
+  //   patientInfo: "Patient Information",
+  //   dateOfBirth: "Date of Birth",
+  //   age: "Age",
+  //   gender: "Gender",
+  //   bloodType: "Blood Type",
+  //   height: "Height",
+  //   weight: "Weight",
+  //   lastVisit: "Last Visit",
+  //   upcomingVisit: "Upcoming Visit",
+  // },
 
   // Profile
   profile: {
     profile: "Profile",
+    settings: "Settings",
+    account: "Account",
+    security: "Security",
+    notifications: "Notifications",
     personalInfo: "Personal Information",
     accountSettings: "Account Settings",
     updateProfile: "Update Profile",
     changePassword: "Change Password",
-    notifications: "Notifications",
     privacy: "Privacy",
-    security: "Security",
     preferences: "Preferences",
     language: "Language",
     darkMode: "Dark Mode",
@@ -353,3 +390,5 @@ export default {
     sunday: "Sunday",
   },
 };
+
+export default translations;

@@ -11,8 +11,6 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-// Removed unused imports:
-// import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -22,14 +20,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
-// Removed unused imports:
-// import { format } from "date-fns";
-// import { es } from "date-fns/locale";
-// import { Loader2, Calendar as CalendarIcon } from "lucide-react";
 import { Loader2 } from "lucide-react";
 import { createAppointment } from "@/lib/firebase/db";
 import { useAuth } from "@/lib/hooks/use-auth";
-import { Doctor, Patient } from "@/lib/types";
+import { Doctor, Patient, AppointmentStatus } from "@/lib/types";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Timestamp } from "firebase/firestore";
 
 interface AppointmentFormProps {
   isOpen: boolean;
@@ -40,6 +41,15 @@ interface AppointmentFormProps {
   doctorId?: string;
   patientId?: string;
 }
+
+const formSchema = z.object({
+  date: z.date(),
+  time: z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/, "Hora inválida"),
+  reason: z.string().min(1, "Por favor, ingresa un motivo"),
+  notes: z.string().optional(),
+  doctorId: z.string().optional(),
+  patientId: z.string().optional(),
+});
 
 export function AppointmentForm({
   isOpen,
@@ -52,17 +62,15 @@ export function AppointmentForm({
 }: AppointmentFormProps) {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(
+    initialDate || new Date()
+  );
+  const [selectedTime, setSelectedTime] = useState<string>(
+    `${initialHour || 9}:${initialMinute || 0}`
+  );
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [patients, setPatients] = useState<Patient[]>([]);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(
-    initialDate
-  );
-  const [selectedHour, setSelectedHour] = useState<number | undefined>(
-    initialHour
-  );
-  const [selectedMinute, setSelectedMinute] = useState<number | undefined>(
-    initialMinute
-  );
   const [selectedDoctor, setSelectedDoctor] = useState<string>(
     initialDoctorId || ""
   );
@@ -70,30 +78,52 @@ export function AppointmentForm({
     initialPatientId || ""
   );
   const [selectedSpecialty, setSelectedSpecialty] = useState<string>("");
-  const [reason, setReason] = useState<string>("");
   const [availableTimeSlots, setAvailableTimeSlots] = useState<
     { hour: number; minute: number }[]
   >([]);
 
-  // Specialties list
-  const specialties = [
-    "Todas",
-    "Medicina General",
-    "Psiquiatría",
-    "Psicología",
-    "Neurología",
-    "Cardiología",
-    "Dermatología",
-    "Pediatría",
-    "Ginecología",
-    "Traumatología",
-  ];
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      date: selectedDate,
+      time: selectedTime,
+      reason: "",
+      notes: "",
+      doctorId: selectedDoctor,
+      patientId: selectedPatient,
+    },
+  });
 
-  // Time slots for selection
-  const hours = Array.from({ length: 13 }, (_, i) => i + 8);
-  const minutes = [0, 30];
+  const onSubmit = async (data: z.infer<typeof formSchema>) => {
+    try {
+      setError(null);
+      setIsLoading(true);
 
-  // Fetch doctors and patients on load
+      if (!selectedDate || !selectedTime) {
+        throw new Error("Por favor, seleccione una fecha y hora");
+      }
+
+      const appointmentData = {
+        date: selectedDate,
+        time: selectedTime,
+        reason: data.reason,
+        notes: data.notes,
+        doctorId: selectedDoctor || user?.uid,
+        patientId: selectedPatient || user?.uid,
+        status: "SCHEDULED" as AppointmentStatus,
+        createdAt: Timestamp.fromDate(new Date()),
+        updatedAt: Timestamp.fromDate(new Date()),
+      };
+
+      await createAppointment(appointmentData);
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al crear la cita");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -140,8 +170,8 @@ export function AppointmentForm({
         // In a real app, this would check against doctor's schedule and existing appointments
         // For now, just set all slots available
         const slots = [];
-        for (const hour of hours) {
-          for (const minute of minutes) {
+        for (const hour of Array.from({ length: 13 }, (_, i) => i + 8)) {
+          for (const minute of Array.from({ length: 60 }, (_, i) => i)) {
             slots.push({ hour, minute });
           }
         }
@@ -152,252 +182,103 @@ export function AppointmentForm({
     };
 
     fetchAvailableTimeSlots();
-  }, [selectedDoctor, selectedDate, hours, minutes]); // Fixed missing dependencies
-
-  // Handle form submission
-  const handleSubmit = async () => {
-    if (
-      !selectedDoctor ||
-      !selectedPatient ||
-      !selectedDate ||
-      selectedHour === undefined ||
-      selectedMinute === undefined ||
-      !reason
-    ) {
-      // Show validation error
-      alert("Por favor complete todos los campos requeridos");
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      // Format time
-      const startTime = `${selectedHour
-        .toString()
-        .padStart(2, "0")}:${selectedMinute.toString().padStart(2, "0")}`;
-      const endTime = calculateEndTime(selectedHour, selectedMinute);
-
-      // Get names
-      const doctorName =
-        doctors.find((d) => d.uid === selectedDoctor)?.displayName || "";
-      const doctorSpecialty =
-        doctors.find((d) => d.uid === selectedDoctor)?.specialty || "";
-      const patientName =
-        patients.find((p) => p.uid === selectedPatient)?.displayName || "";
-
-      // Create appointment
-      await createAppointment({
-        patientId: selectedPatient,
-        doctorId: selectedDoctor,
-        patientName,
-        doctorName,
-        date: selectedDate!,
-        startTime: startTime,
-        endTime: endTime,
-        status: "SCHEDULED",
-        reason,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      });
-
-      // Close form on success
-      onClose();
-
-      // Show success message or refresh calendar
-    } catch (error) {
-      console.error("Error creating appointment:", error);
-      // Show error message
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Calculate end time (30 minutes after start time)
-  const calculateEndTime = (hour: number, minute: number): string => {
-    if (minute === 30) {
-      return `${(hour + 1).toString().padStart(2, "0")}:00`;
-    } else {
-      return `${hour.toString().padStart(2, "0")}:30`;
-    }
-  };
-
-  // Reset form state when dialog opens/closes
-  useEffect(() => {
-    if (!isOpen) {
-      if (!initialDate) setSelectedDate(undefined);
-      if (initialHour === undefined) setSelectedHour(undefined);
-      if (initialMinute === undefined) setSelectedMinute(undefined);
-      if (!initialDoctorId && user?.role !== "DOCTOR") setSelectedDoctor("");
-      if (!initialPatientId && user?.role !== "PATIENT") setSelectedPatient("");
-      setSelectedSpecialty("");
-      setReason("");
-    }
-  }, [
-    isOpen,
-    initialDate,
-    initialHour,
-    initialMinute,
-    initialDoctorId,
-    initialPatientId,
-    user,
-  ]);
+  }, [selectedDoctor, selectedDate]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle className="text-xl">Agendar Nueva Cita</DialogTitle>
+          <DialogTitle>Crear Cita</DialogTitle>
         </DialogHeader>
-
-        <div className="grid gap-4 py-4">
-          {user?.role !== "DOCTOR" && (
-            <>
-              <div>
-                <Label htmlFor="specialty">Especialidad</Label>
-                <Select
-                  value={selectedSpecialty}
-                  onValueChange={setSelectedSpecialty}
-                >
-                  <SelectTrigger id="specialty">
-                    <SelectValue placeholder="Selecciona una especialidad" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {specialties.map((specialty) => (
-                      <SelectItem key={specialty} value={specialty}>
-                        {specialty}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="doctor">Médico</Label>
-                <Select
-                  value={selectedDoctor}
-                  onValueChange={setSelectedDoctor}
-                  disabled={user?.role ? String(user.role) !== "DOCTOR" : true}
-                >
-                  <SelectTrigger id="doctor">
-                    <SelectValue placeholder="Selecciona un médico" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {filteredDoctors.map((doctor) => (
-                      <SelectItem key={doctor.uid} value={doctor.uid}>
-                        {doctor.displayName} - {doctor.specialty}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </>
-          )}
-
-          {user?.role !== "PATIENT" && (
-            <div>
-              <Label htmlFor="patient">Paciente</Label>
-              <Select
-                value={selectedPatient}
-                onValueChange={setSelectedPatient}
-                disabled={user?.role !== "DOCTOR"}
-              >
-                <SelectTrigger id="patient">
-                  <SelectValue placeholder="Selecciona un paciente" />
-                </SelectTrigger>
-                <SelectContent>
-                  {patients?.map((patient) => (
-                    <SelectItem key={patient.uid} value={patient.uid}>
-                      {patient.displayName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          <div>
-            <Label>Fecha</Label>
-            <div className="border rounded-md p-3 mt-1">
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={setSelectedDate}
-                disabled={(date) => {
-                  // Disable past dates and weekends
-                  const today = new Date();
-                  today.setHours(0, 0, 0, 0);
-                  const day = date.getDay();
-                  return date < today || day === 0 || day === 6;
-                }}
-                initialFocus
-              />
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="time">Hora</Label>
-            <div className="grid grid-cols-4 gap-2 mt-1">
-              {availableTimeSlots.map(({ hour, minute }) => (
-                <Button
-                  key={`${hour}-${minute}`}
-                  type="button"
-                  variant={
-                    selectedHour === hour && selectedMinute === minute
-                      ? "default"
-                      : "outline"
-                  }
-                  onClick={() => {
-                    setSelectedHour(hour);
-                    setSelectedMinute(minute);
-                  }}
-                  className="text-sm"
-                >
-                  {hour.toString().padStart(2, "0")}:
-                  {minute.toString().padStart(2, "0")}
-                </Button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="reason">Motivo de la consulta</Label>
-            <Textarea
-              id="reason"
-              placeholder="Describa brevemente el motivo de su consulta"
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              className="mt-1"
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="date"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Fecha</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Calendar
+                        mode="single"
+                        selected={selectedDate}
+                        onSelect={setSelectedDate}
+                        disabled={(date) =>
+                          date < new Date() ||
+                          date > new Date(new Date().setFullYear(new Date().getFullYear() + 1))
+                        }
+                        initialFocus
+                      />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-        </div>
-
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={
-              isLoading ||
-              !selectedDoctor ||
-              !selectedPatient ||
-              !selectedDate ||
-              selectedHour === undefined ||
-              selectedMinute === undefined ||
-              !reason
-            }
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Creando...
-              </>
-            ) : (
-              "Agendar Cita"
+            <FormField
+              control={form.control}
+              name="time"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Hora</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="time"
+                      value={selectedTime}
+                      onChange={(e) => setSelectedTime(e.target.value)}
+                      className="w-full"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="reason"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Motivo</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      placeholder="Ingrese el motivo de la consulta"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Notas</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      {...field}
+                      placeholder="Notas adicionales (opcional)"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            {error && (
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
             )}
-          </Button>
-        </DialogFooter>
+            <DialogFooter>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Crear Cita
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

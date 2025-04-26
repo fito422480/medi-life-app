@@ -3,7 +3,9 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getAllDoctors, getDoctorsBySpecialty } from "@/lib/firebase/db";
-import { Doctor } from "@/lib/types";
+import { UserRole } from "@/lib/types/types";
+import { Doctor as DoctorType } from "@/lib/types";
+import { Specialty } from "@/lib/types";
 import {
   Card,
   CardContent,
@@ -22,117 +24,137 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-// Tabs eliminado aquí
-import {
-  Search,
-  CalendarPlus,
-  Star,
-  StarHalf,
-  Clock,
-  MapPin,
-} from "lucide-react";
+import { Search, CalendarPlus, Star, Clock, MapPin } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
+import { useI18n } from "@/i18n/config";
 
 export default function DoctorsPage() {
   const router = useRouter();
-  const [doctors, setDoctors] = useState<Doctor[]>([]);
-  const [filteredDoctors, setFilteredDoctors] = useState<Doctor[]>([]);
+  const t = useI18n();
+  const [doctors, setDoctors] = useState<DoctorType[]>([]);
+  const [filteredDoctors, setFilteredDoctors] = useState<DoctorType[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedSpecialty, setSelectedSpecialty] = useState("all");
+  const [selectedSpecialty, setSelectedSpecialty] = useState<Specialty | "all">("all");
+  const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const MAX_RETRIES = 3;
 
-  // Specialties list
-  const specialties = [
-    { value: "all", label: "Todas las especialidades" },
-    { value: "Medicina General", label: "Medicina General" },
-    { value: "Psiquiatría", label: "Psiquiatría" },
-    { value: "Psicología", label: "Psicología" },
-    { value: "Neurología", label: "Neurología" },
-    { value: "Cardiología", label: "Cardiología" },
-    { value: "Dermatología", label: "Dermatología" },
-    { value: "Pediatría", label: "Pediatría" },
-    { value: "Ginecología", label: "Ginecología" },
-    { value: "Traumatología", label: "Traumatología" },
+  // Type for specialty items
+  type SpecialtyItem = {
+    value: Specialty | "all";
+    label: string;
+  };
+
+  // Lista de especialidades
+  const specialties: SpecialtyItem[] = [
+    { value: Specialty.GENERAL, label: t("doctors.specialties.list.general", { count: 0 }) },
+    { value: Specialty.PSYCHIATRY, label: t("doctors.specialties.list.psychiatry", { count: 0 }) },
+    { value: Specialty.PSYCHOLOGY, label: t("doctors.specialties.list.psychology", { count: 0 }) },
+    { value: Specialty.NEUROLOGY, label: t("doctors.specialties.list.neurology", { count: 0 }) },
+    { value: Specialty.CARDIOLOGY, label: t("doctors.specialties.list.cardiology", { count: 0 }) },
+    { value: Specialty.DERMATOLOGY, label: t("doctors.specialties.list.dermatology", { count: 0 }) },
+    { value: Specialty.PEDIATRICS, label: t("doctors.specialties.list.pediatrics", { count: 0 }) },
+    { value: Specialty.GYNECOLOGY, label: t("doctors.specialties.list.gynecology", { count: 0 }) },
+    { value: Specialty.ORTHOPEDICS, label: t("doctors.specialties.list.orthopedics", { count: 0 }) },
   ];
+
+  const specialtiesWithAll = [{ value: "all", label: t("doctors.specialties.all", { count: specialties.length }) }, ...specialties];
 
   useEffect(() => {
     const fetchDoctors = async () => {
-      setLoading(true);
       try {
-        let fetchedDoctors;
-
-        if (selectedSpecialty === "all") {
-          fetchedDoctors = await getAllDoctors();
-        } else {
-          fetchedDoctors = await getDoctorsBySpecialty(selectedSpecialty);
-        }
-
-        setDoctors(fetchedDoctors);
-        setFilteredDoctors(fetchedDoctors);
+        setLoading(true);
+        setError(null);
+        const doctorsData = await getAllDoctors();
+        setDoctors(doctorsData);
+        setFilteredDoctors(doctorsData);
       } catch (error) {
         console.error("Error fetching doctors:", error);
+        setError(t("doctors.error", { count: 0 }));
+        if (retryCount < MAX_RETRIES) {
+          setRetryCount(prev => prev + 1);
+          setTimeout(() => fetchDoctors(), 2000);
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchDoctors();
-  }, [selectedSpecialty]);
+  }, [retryCount]);
 
-  // Filter doctors based on search query
   useEffect(() => {
-    if (searchQuery.trim() === "") {
+    if (selectedSpecialty === "all") {
       setFilteredDoctors(doctors);
     } else {
-      const query = searchQuery.toLowerCase();
-      const filtered = doctors.filter((doctor) => {
-        const displayName = doctor.displayName || "";
-        const specialty = doctor.specialty || "";
-
-        return (
-          displayName.toLowerCase().includes(query) ||
-          specialty.toLowerCase().includes(query)
-        );
-      });
-      setFilteredDoctors(filtered);
+      setFilteredDoctors(
+        doctors.filter((doc) => doc.specialty === selectedSpecialty)
+      );
     }
-  }, [searchQuery, doctors]);
+  }, [selectedSpecialty, doctors]);
 
-  const handleScheduleAppointment = (doctorId: string) => {
-    router.push(`/dashboard/calendar?doctorId=${doctorId}`);
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value.toLowerCase();
+    setSearchQuery(query);
+    
+    const filtered = doctors.filter((doc) =>
+      doc.displayName?.toLowerCase().includes(query) ||
+      doc.specialty.toString().toLowerCase().includes(query)
+    );
+
+    setFilteredDoctors(filtered);
+  };
+
+  const formatRating = (rating: number | undefined): string => {
+    if (!rating) return t("doctors.ratings.noRating", { count: 0 });
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 !== 0;
+    
+    return `${"★".repeat(fullStars)}${hasHalfStar ? "½" : ""}${"☆".repeat(5 - Math.ceil(rating))}`;
   };
 
   return (
-    <ProtectedRoute allowedRoles={["PATIENT", "ADMIN"]}>
-      <div className="container mx-auto py-6">
-        <div className="flex flex-col space-y-6">
-          <h1 className="text-2xl font-bold tracking-tight">
-            Directorio de Médicos
-          </h1>
-          <p className="text-muted-foreground">
-            Encuentra el especialista adecuado para tu consulta
-          </p>
+    <ProtectedRoute allowedRoles={["PATIENT", "ADMIN"] as UserRole[]} >
+      <div className="container mx-auto py-8">
+        {error && (
+          <div className="mb-4 p-4 rounded-md bg-red-50 text-red-700">
+            <p>{t("doctors.error", { count: 0 })}</p>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setRetryCount(0);
+                setError(null);
+              }}
+              className="mt-2"
+            >
+              {t("doctors.actions.tryAgain", { count: 0 })}
+            </Button>
+          </div>
+        )}
 
-          {/* Search and filter */}
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar por nombre o especialidad..."
-                className="pl-10"
+                placeholder={t("doctors.search.placeholder", { count: 0 })}
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={handleSearch}
+                className="pl-10"
+                aria-label={t("doctors.search.placeholder", { count: 0 })}
               />
             </div>
             <Select
-              value={selectedSpecialty}
-              onValueChange={setSelectedSpecialty}
+              value={selectedSpecialty as string}
+              onValueChange={(value) => setSelectedSpecialty(value as Specialty | "all")}
+              aria-label={t("doctors.filterBySpecialty", { count: 0 })}
             >
-              <SelectTrigger className="w-full sm:w-56">
-                <SelectValue placeholder="Filtrar por especialidad" />
+              <SelectTrigger>
+                <SelectValue placeholder={t("doctors.filterBySpecialty", { count: 0 })} />
               </SelectTrigger>
               <SelectContent>
-                {specialties.map((specialty) => (
+                {specialtiesWithAll.map((specialty) => (
                   <SelectItem key={specialty.value} value={specialty.value}>
                     {specialty.label}
                   </SelectItem>
@@ -141,105 +163,76 @@ export default function DoctorsPage() {
             </Select>
           </div>
 
-          {/* Doctor cards */}
-          {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <Card key={i} className="animate-pulse">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {loading ? (
+              <div className="col-span-full text-center">
+                <p>{t("doctors.status.loading", { count: 0 })}</p>
+              </div>
+            ) : filteredDoctors.length === 0 ? (
+              <div className="col-span-full text-center">
+                <p>{t("doctors.status.noDoctorsFound", { count: 0 })}</p>
+              </div>
+            ) : (
+              filteredDoctors.map((doctor) => (
+                <Card key={doctor.uid}>
                   <CardHeader>
-                    <div className="h-6 w-2/3 bg-gray-200 rounded mb-2"></div>
-                    <div className="h-4 w-1/2 bg-gray-200 rounded"></div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-24 w-full bg-gray-200 rounded mb-4"></div>
-                  </CardContent>
-                  <CardFooter>
-                    <div className="h-10 w-full bg-gray-200 rounded"></div>
-                  </CardFooter>
-                </Card>
-              ))}
-            </div>
-          ) : filteredDoctors.length === 0 ? (
-            <div className="text-center py-12">
-              <h3 className="text-lg font-medium mb-2">
-                No se encontraron médicos
-              </h3>
-              <p className="text-muted-foreground mb-6">
-                No hay médicos que coincidan con tu búsqueda. Intenta con
-                diferentes criterios.
-              </p>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setSearchQuery("");
-                  setSelectedSpecialty("all");
-                }}
-              >
-                Mostrar todos los médicos
-              </Button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredDoctors.map((doctor) => (
-                <Card key={doctor.uid} className="overflow-hidden">
-                  <CardHeader className="pb-2">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle className="text-lg">
-                          {doctor.displayName || "Doctor"}
-                        </CardTitle>
-                        <CardDescription>
-                          {doctor.specialty || "Especialidad no especificada"}
-                        </CardDescription>
-                      </div>
-                      <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200">
-                        {doctor.specialty || "General"}
+                    <CardTitle className="flex items-center gap-2">
+                      {doctor.displayName}
+                      <Badge variant="secondary">
+                        {t(`doctors.specialties.list.${doctor.specialty}`, { count: 0 })}
                       </Badge>
-                    </div>
+                    </CardTitle>
+                    <CardDescription>
+                      {doctor.bio ? 
+                        `${doctor.bio.slice(0, 100)}${doctor.bio.length > 100 ? "..." : ""}` : 
+                        t("doctors.noBio", { count: 0 })}
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="mb-4">
-                      <p className="text-sm text-muted-foreground mb-2 flex items-center">
-                        <Clock className="h-4 w-4 mr-2" />
-                        Disponible Lun-Vie, 8:00 - 17:00
-                      </p>
-                      <p className="text-sm text-muted-foreground flex items-center">
-                        <MapPin className="h-4 w-4 mr-2" />
-                        {doctor.address || "Dirección no disponible"}
-                      </p>
+                    <div className="flex flex-col gap-4">
+                      <div className="flex items-center gap-2">
+                        <Star className="h-4 w-4 text-yellow-500" />
+                        <span>
+                          {formatRating(doctor.rating)} ({doctor.reviewCount || 0} {t("common.reviews", { count: 0 })})
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-gray-500" />
+                        <span>{t("doctors.availableHours", { count: 0 })}</span>
+                      </div>
+                      {doctor.address ? (
+                        <div className="flex items-center gap-2">
+                          <MapPin className="h-4 w-4 text-gray-500" />
+                          <span>{doctor.address}</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <MapPin className="h-4 w-4 text-gray-400" />
+                          <span>{t("doctors.noAddress", { count: 0 })}</span>
+                        </div>
+                      )}
                     </div>
-                    <div className="flex items-center mb-4">
-                      {Array(4)
-                        .fill(0)
-                        .map((_, i) => (
-                          <Star
-                            key={i}
-                            className="h-4 w-4 text-yellow-400 fill-yellow-400"
-                          />
-                        ))}
-                      <StarHalf className="h-4 w-4 text-yellow-400 fill-yellow-400" />
-                      <span className="text-sm text-muted-foreground ml-2">
-                        4.5 (120 reseñas)
-                      </span>
-                    </div>
-                    <p className="text-sm line-clamp-3">
-                      {doctor.bio ||
-                        "El Dr. es un profesional comprometido con brindar atención médica de calidad. Cuenta con amplia experiencia en su especialidad."}
-                    </p>
                   </CardContent>
-                  <CardFooter>
+                  <CardFooter className="flex justify-between">
                     <Button
-                      className="w-full"
-                      onClick={() => handleScheduleAppointment(doctor.uid)}
+                      variant="outline"
+                      onClick={() => router.push(`/doctors/${doctor.uid}`)}
+                      aria-label={`${t("doctors.viewProfile", { count: 0 })} ${doctor.displayName}`}
+                    >
+                      {t("doctors.viewProfile", { count: 0 })}
+                    </Button>
+                    <Button
+                      onClick={() => router.push(`/calendar?doctor=${doctor.uid}`)}
+                      aria-label={`${t("doctors.scheduleAppointment", { count: 0 })} with ${doctor.displayName}`}
                     >
                       <CalendarPlus className="h-4 w-4 mr-2" />
-                      Agendar Cita
+                      {t("doctors.scheduleAppointment", { count: 0 })}
                     </Button>
                   </CardFooter>
                 </Card>
-              ))}
-            </div>
-          )}
+              ))
+            )}
+          </div>
         </div>
       </div>
     </ProtectedRoute>

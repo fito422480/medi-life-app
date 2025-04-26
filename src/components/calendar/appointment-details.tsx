@@ -12,20 +12,12 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { Appointment as BaseAppointment, AppointmentStatus, Medication } from "@/lib/types";
+import { Appointment as BaseAppointment, AppointmentStatus, Medication, FirestoreDate } from "@/lib/types";
 
 // Extend Appointment type to include optional 'diagnosis' and 'notes'
 type Appointment = BaseAppointment & {
@@ -58,7 +50,7 @@ export function AppointmentDetails({
   const [appointmentData, setAppointmentData] = useState<Partial<Appointment>>(
     {}
   );
-  const [medications, setMedications] = useState<Medication[]>([]);
+  const [medications, _setMedications] = useState<Medication[]>([]);
   const [newMedication, setNewMedication] = useState<Partial<Medication>>({
     name: "",
     dosage: "",
@@ -66,49 +58,10 @@ export function AppointmentDetails({
     instructions: "",
   });
 
-  // Status badge colors
-  const getStatusBadge = useCallback((status: AppointmentStatus) => {
-    const statusConfig = {
-      SCHEDULED: {
-        label: "Pendiente",
-        className: "bg-yellow-100 text-yellow-800 hover:bg-yellow-200",
-      },
-      CONFIRMED: {
-        label: "Confirmada",
-        className: "bg-green-100 text-green-800 hover:bg-green-200",
-      },
-      COMPLETED: {
-        label: "Completada",
-        className: "bg-blue-100 text-blue-800 hover:bg-blue-200",
-      },
-      CANCELLED: {
-        label: "Cancelada",
-        className: "bg-red-100 text-red-800 hover:bg-red-200",
-      },
-      MISSED: {
-        label: "No Asistió",
-        className: "bg-gray-100 text-gray-800 hover:bg-gray-200",
-      },
-      RESCHEDULED: {
-        label: "Reprogramada",
-        className: "bg-purple-100 text-purple-800 hover:bg-purple-200",
-      },
-    };
-
-    const config = statusConfig[status];
-    return (
-      <Badge variant="outline" className={config.className}>
-        {config.label}
-      </Badge>
-    );
-  }, []);
-
   // Format date for display
-  const formatAppointmentDate = useCallback((date: Date | string) => {
-    const formattedDate = date instanceof Date ? date : new Date(date);
-    return format(formattedDate, "EEEE d 'de' MMMM 'de' yyyy 'a las' HH:mm", {
-      locale: es,
-    });
+  const formatAppointmentDate = useCallback((date: Date | FirestoreDate): string => {
+    const jsDate = date instanceof Date ? date : date.toDate();
+    return format(jsDate, "EEEE, d 'de' MMMM 'de' yyyy 'a las' HH:mm", { locale: es });
   }, []);
 
   // Handle status change
@@ -188,7 +141,7 @@ export function AppointmentDetails({
         id: newMedicationId,
       } as Medication;
 
-      setMedications((prev) => [...prev, addedMedication]);
+      // setMedications((prev) => [...prev, addedMedication]);
 
       // Reset new medication form
       setNewMedication({
@@ -211,7 +164,7 @@ export function AppointmentDetails({
           const fetchedMedications = await getAppointmentMedications(
             appointment.id
           );
-          setMedications(fetchedMedications);
+          // setMedications(fetchedMedications);
         } catch (error) {
           console.error("Error fetching medications:", error);
         }

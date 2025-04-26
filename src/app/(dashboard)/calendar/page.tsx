@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
+import { User } from "@/lib/types/user";
 
 export default function CalendarPage() {
   const searchParams = useSearchParams();
@@ -19,8 +20,8 @@ export default function CalendarPage() {
   const [patientId, setPatientId] = useState<string | undefined>(
     searchParams.get("appointmentId") || undefined
   );
-  const [selectedDoctor, setSelectedDoctor] = useState<unknown>(null);
-  const [selectedPatient, setSelectedPatient] = useState<unknown>(null);
+  const [selectedDoctor, setSelectedDoctor] = useState<User | null>(null);
+  const [selectedPatient, setSelectedPatient] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -30,7 +31,7 @@ export default function CalendarPage() {
         // If we have a doctorId but we are a doctor, we don't need to fetch the doctor profile
         if (doctorId && user?.role !== "DOCTOR") {
           const doctor = await getDoctorProfile(doctorId);
-          setSelectedDoctor(doctor);
+          setSelectedDoctor(doctor as User);
         } else if (user?.role === "DOCTOR") {
           // If we are a doctor, we are the selected doctor
           setDoctorId(user.uid);
@@ -40,7 +41,7 @@ export default function CalendarPage() {
         // If we have a patientId but we are a patient, we don't need to fetch the patient profile
         if (patientId && user?.role !== "PATIENT") {
           const patient = await getPatientProfile(patientId);
-          setSelectedPatient(patient);
+          setSelectedPatient(patient as User);
         } else if (user?.role === "PATIENT") {
           // If we are a patient, we are the selected patient
           setPatientId(user.uid);
@@ -90,10 +91,10 @@ export default function CalendarPage() {
                     <div className="flex justify-between items-center">
                       <div>
                         <p className="font-medium">
-                          {selectedDoctor.displayName}
+                          {selectedDoctor?.displayName}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          {selectedDoctor.specialty}
+                          {selectedDoctor?.specialty}
                         </p>
                       </div>
                       <Button
@@ -120,10 +121,10 @@ export default function CalendarPage() {
                     <div className="flex justify-between items-center">
                       <div>
                         <p className="font-medium">
-                          {selectedPatient.displayName}
+                          {selectedPatient?.displayName}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          {selectedPatient.email}
+                          {selectedPatient?.email}
                         </p>
                       </div>
                       <Button
