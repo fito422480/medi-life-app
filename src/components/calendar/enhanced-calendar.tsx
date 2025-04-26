@@ -1,7 +1,6 @@
 "use client";
-
 import { useState, useCallback, useMemo, useEffect } from "react";
-import { Calendar, momentLocalizer, Views } from "react-big-calendar";
+import { Calendar, momentLocalizer, Views, View } from "react-big-calendar";
 import moment from "moment";
 import "moment/locale/es";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -55,7 +54,7 @@ interface EnhancedCalendarProps {
     resourceId?: string | number;
   }) => void;
   onNavigate?: (date: Date, view: string) => void;
-  onView?: (view: string) => void;
+  onView?: (view: View) => void;
   isLoading?: boolean;
   className?: string;
   resources?: Array<{ id: string; title: string }>;
@@ -64,8 +63,6 @@ interface EnhancedCalendarProps {
   showResources?: boolean;
   toolbar?: boolean;
 }
-
-import type { View } from "react-big-calendar";
 
 export function EnhancedCalendar({
   events,
@@ -82,17 +79,15 @@ export function EnhancedCalendar({
   toolbar = true,
 }: EnhancedCalendarProps) {
   const [date, setDate] = useState(new Date());
-  const [view, setView] = useState<View>(Views.MONTH);
+  const [view, setView] = useState<View>(Views.MONTH); // Actualizado a tipo View
   const { theme } = useTheme();
   const t = useI18n();
   const [mounted, setMounted] = useState(false);
 
-  // Evitar parpadeo durante la hidratación
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Personalizar el renderizado de eventos
   const eventPropGetter = useCallback(
     (event: CalendarEvent) => {
       const statusColorMap: Record<
@@ -140,7 +135,6 @@ export function EnhancedCalendar({
           text: "rgb(55, 65, 81)",
         },
       };
-
       const color = statusColorMap[event.status] || {
         background:
           theme === "dark"
@@ -149,7 +143,6 @@ export function EnhancedCalendar({
         border: "rgb(107, 114, 128)",
         text: "rgb(55, 65, 81)",
       };
-
       return {
         style: {
           backgroundColor: color.background,
@@ -164,7 +157,6 @@ export function EnhancedCalendar({
     [theme]
   );
 
-  // Personalizar el toolbar del calendario
   const CustomToolbar = ({ label, onNavigate, onView }: any) => {
     return (
       <div className="flex flex-wrap items-center justify-between mb-4">
@@ -175,7 +167,7 @@ export function EnhancedCalendar({
             onClick={() => onNavigate("TODAY")}
           >
             <CalendarIcon className="h-4 w-4 mr-1" />
-            {t("common.today", {})}
+            {t("common.today", { count: 1 })}
           </Button>
           <div className="flex items-center">
             <Button
@@ -203,7 +195,7 @@ export function EnhancedCalendar({
               className="rounded-lg"
               onClick={() => onView(Views.MONTH)}
             >
-              {t("month", {})}
+              {t("month", { count: 1 })}
             </Button>
             <Button
               variant={view === Views.WEEK ? "default" : "ghost"}
@@ -211,7 +203,7 @@ export function EnhancedCalendar({
               className="rounded-lg"
               onClick={() => onView(Views.WEEK)}
             >
-              {t("week", {})}
+              {t("week", { count: 1 })}
             </Button>
             <Button
               variant={view === Views.DAY ? "default" : "ghost"}
@@ -219,7 +211,7 @@ export function EnhancedCalendar({
               className="rounded-lg"
               onClick={() => onView(Views.DAY)}
             >
-              {t("day", {})}
+              {t("day", { count: 1 })}
             </Button>
             <Button
               variant={view === Views.AGENDA ? "default" : "ghost"}
@@ -227,31 +219,30 @@ export function EnhancedCalendar({
               className="rounded-lg"
               onClick={() => onView(Views.AGENDA)}
             >
-              {t("agenda", {})}
+              {t("agenda", { count: 1 })}
             </Button>
           </div>
           <Button size="sm" className="hidden sm:flex">
             <Plus className="h-4 w-4 mr-1" />
-            {t("appointments.newAppointment", {})}
+            {t("appointments.newAppointment", { count: 1 })}
           </Button>
         </div>
       </div>
     );
   };
 
-  // Formateo personalizado para los días y horas
   const formats = useMemo(
     () => ({
-      dayFormat: (date: Date, culture: string, localizer: any) =>
-        localizer.format(date, "dd D", culture),
-      timeGutterFormat: (date: Date, culture: string, localizer: any) =>
-        localizer.format(date, "HH:mm", culture),
+      dayFormat: (date: Date, culture?: string, localizer?: any) =>
+        localizer?.format(date, "dd D", culture),
+      timeGutterFormat: (date: Date, culture?: string, localizer?: any) =>
+        localizer?.format(date, "HH:mm", culture),
       eventTimeRangeFormat: (
-        { start, end }: any,
-        culture: string,
-        localizer: any
+        { start, end }: { start: Date; end: Date },
+        culture?: string,
+        localizer?: any
       ) =>
-        `${localizer.format(start, "HH:mm", culture)} - ${localizer.format(
+        `${localizer?.format(start, "HH:mm", culture)} - ${localizer?.format(
           end,
           "HH:mm",
           culture
@@ -260,7 +251,6 @@ export function EnhancedCalendar({
     []
   );
 
-  // Renderizar mensaje en el slot
   const dayPropGetter = useCallback(
     (date: Date) => {
       const today = new Date();
@@ -268,7 +258,6 @@ export function EnhancedCalendar({
         date.getDate() === today.getDate() &&
         date.getMonth() === today.getMonth() &&
         date.getFullYear() === today.getFullYear();
-
       return {
         style: {
           backgroundColor: isToday
@@ -290,7 +279,6 @@ export function EnhancedCalendar({
         date.getDate() === today.getDate() &&
         date.getMonth() === today.getMonth() &&
         date.getFullYear() === today.getFullYear();
-
       return {
         style: {
           backgroundColor: isToday
@@ -304,7 +292,6 @@ export function EnhancedCalendar({
     [theme]
   );
 
-  // Manejadores de eventos
   const handleSelectEvent = (event: CalendarEvent) => {
     if (onSelectEvent) {
       onSelectEvent(event);
@@ -328,7 +315,7 @@ export function EnhancedCalendar({
     }
   };
 
-  const handleView = (newView: string) => {
+  const handleView = (newView: View) => {
     setView(newView);
     if (onView) {
       onView(newView);
@@ -339,7 +326,7 @@ export function EnhancedCalendar({
     return (
       <Card className={cn("w-full h-[600px]", className)}>
         <CardHeader>
-          <CardTitle>{t("appointments.calendar", {})}</CardTitle>
+          <CardTitle>{t("appointments.calendar", { count: 1 })}</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           <div className="h-[500px] animate-pulse bg-muted rounded-md" />
@@ -352,14 +339,14 @@ export function EnhancedCalendar({
     return (
       <Card className={cn("w-full h-[600px]", className)}>
         <CardHeader>
-          <CardTitle>{t("appointments.calendar", {})}</CardTitle>
+          <CardTitle>{t("appointments.calendar", { count: 1 })}</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           <div className="h-[500px] flex items-center justify-center">
             <div className="flex flex-col items-center gap-2">
               <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
               <p className="text-sm text-muted-foreground">
-                {t("common.loading", {})}
+                {t("common.loading", { count: 1 })}
               </p>
             </div>
           </div>
@@ -371,7 +358,7 @@ export function EnhancedCalendar({
   return (
     <Card className={cn("w-full h-[600px]", className)}>
       <CardHeader className="pb-0">
-        <CardTitle>{t("appointments.calendar", {})}</CardTitle>
+        <CardTitle>{t("appointments.calendar", { count: 1 })}</CardTitle>
       </CardHeader>
       <CardContent className="p-0 mt-2">
         <div className="h-[520px] px-4 pb-4">
@@ -417,8 +404,8 @@ export function EnhancedCalendar({
               },
             }}
             resources={showResources ? resources : undefined}
-            resourceIdAccessor={resourceIdAccessor}
-            resourceTitleAccessor={resourceTitleAccessor}
+            resourceIdAccessor={(resource) => resource.id}
+            resourceTitleAccessor={(resource) => resource.title}
             messages={{
               today: "common.today",
               previous: "common.previous",
@@ -431,7 +418,8 @@ export function EnhancedCalendar({
               time: "time",
               event: "event",
               noEventsInRange: "noEventsInRange",
-              showMore: (total: number) => `+ ${total} ${t("common.more", {})}`,
+              showMore: (total: number) =>
+                `+ ${total} ${t("common.more", { count: total })}`,
             }}
           />
         </div>

@@ -90,6 +90,7 @@ export const appointmentStatusColors: Record<AppointmentStatus, string> = {
   RESCHEDULED: "bg-orange-100 text-orange-800 hover:bg-orange-200"
 };
 
+// Aquí están las líneas que debes asegurarte que estén en tu interfaz Appointment:
 export interface Appointment {
   id?: string;
   doctorId: string;
@@ -105,12 +106,12 @@ export interface Appointment {
   createdAt?: FirestoreDate;
   updatedAt?: FirestoreDate;
 
-  // Para UI
+  // Para UI - estas propiedades son importantes
   doctorName?: string;
   doctorSpecialty?: string;
   patientName?: string;
-  startTime?: string;
-  endTime?: string;
+  startTime?: string; // Formato "HH:MM"
+  endTime?: string;   // Formato "HH:MM"
 }
 
 // ─────────────────────────────────────────────────────────────

@@ -8,7 +8,6 @@ import {
   format,
   isToday,
   isSameDay,
-  // parse, - Eliminado
   eachDayOfInterval,
 } from "date-fns";
 import { es } from "date-fns/locale";
@@ -33,6 +32,7 @@ import { AppointmentDetails } from "./appointment-details";
 import { AppointmentForm } from "./appointment-form";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { useAppointments } from "@/lib/hooks/use-appointments";
+import { Timestamp } from "firebase/firestore";
 
 interface AppointmentCalendarProps {
   doctorId?: string;
@@ -89,14 +89,15 @@ export function AppointmentCalendar({
   // Handle time slot click
   const handleTimeSlotClick = (date: Date, hour: number, minute: number) => {
     const appointmentsInSlot = appointments.filter((apt) => {
-      const aptDate = apt.date instanceof Date ? apt.date : new Date(apt.date);
+      const aptDate = apt.date instanceof Date ? apt.date : 
+                     apt.date instanceof Timestamp ? apt.date.toDate() : 
+                     new Date(apt.date);
+      
       return (
         isSameDay(aptDate, date) &&
-        typeof apt.time === "string" &&
-        apt.time &&
-        parseInt(apt.time.split(":")[0]) === hour &&
-        apt.time.split(":")[1] !== undefined &&
-        parseInt(apt.time.split(":")[1]) === minute
+        apt.startTime &&
+        parseInt(apt.startTime.split(":")[0]) === hour &&
+        parseInt(apt.startTime.split(":")[1]) === minute
       );
     });
 
@@ -114,14 +115,15 @@ export function AppointmentCalendar({
   // Render appointment in time slot
   const renderAppointment = (date: Date, hour: number, minute: number) => {
     const appointmentsInSlot = appointments.filter((apt) => {
-      const aptDate = apt.date instanceof Date ? apt.date : new Date(apt.date);
+      const aptDate = apt.date instanceof Date ? apt.date : 
+                     apt.date instanceof Timestamp ? apt.date.toDate() : 
+                     new Date(apt.date);
+      
       return (
         isSameDay(aptDate, date) &&
-        typeof apt.time === "string" &&
-        apt.time &&
-        parseInt(apt.time.split(":")[0]) === hour &&
-        apt.time.split(":")[1] !== undefined &&
-        parseInt(apt.time.split(":")[1]) === minute
+        apt.startTime &&
+        parseInt(apt.startTime.split(":")[0]) === hour &&
+        parseInt(apt.startTime.split(":")[1]) === minute
       );
     });
 
@@ -169,8 +171,11 @@ export function AppointmentCalendar({
 
     // Check if there's already an appointment in this slot
     const hasAppointment = appointments.some((apt) => {
-      const aptDate = apt.date instanceof Date ? apt.date : new Date(apt.date);
-      return isSameDay(aptDate, date) && apt.time === slotTime;
+      const aptDate = apt.date instanceof Date ? apt.date : 
+                     apt.date instanceof Timestamp ? apt.date.toDate() : 
+                     new Date(apt.date);
+      
+      return isSameDay(aptDate, date) && apt.startTime === slotTime;
     });
 
     if (hasAppointment) return false;
@@ -282,16 +287,15 @@ export function AppointmentCalendar({
 
                         {currentWeek.map((day, dayIndex) => {
                           const hasAppointment = appointments.some((apt) => {
-                            const aptDate =
-                              apt.date instanceof Date
-                                ? apt.date
-                                : new Date(apt.date);
+                            const aptDate = apt.date instanceof Date ? apt.date : 
+                                          apt.date instanceof Timestamp ? apt.date.toDate() : 
+                                          new Date(apt.date);
+                            
                             return (
                               isSameDay(aptDate, day) &&
-                              typeof apt.time === "string" &&
-                              apt.time &&
-                              parseInt(apt.time.split(":")[0]) === hour &&
-                              parseInt(apt.time.split(":")[1]) === minute
+                              apt.startTime &&
+                              parseInt(apt.startTime.split(":")[0]) === hour &&
+                              parseInt(apt.startTime.split(":")[1]) === minute
                             );
                           });
 
